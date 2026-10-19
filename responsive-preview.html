@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tution Management — responsive preview</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0b0e18; color: #e9edf7;
+         font: 14px/1.5 Inter, system-ui, sans-serif; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lede { color: #9aa6c2; margin: 0 0 20px; max-width: 80ch; }
+  .rail { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; }
+  .group { margin-bottom: 26px; border-top: 1px solid #232e4c; padding-top: 14px; }
+  .group h2 { font-size: 15px; margin: 0 0 12px; color: #f6a93b; }
+  figure { margin: 0; flex: 0 0 auto; }
+  figcaption { font-size: 12px; color: #9aa6c2; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+  iframe { border: 1px solid #26304a; border-radius: 10px; background: #0e1220; display: block; }
+  .verdict { font-weight: 700; padding: 1px 7px; border-radius: 999px; font-size: 11px; }
+  .pass { background: rgba(52,211,154,.15); color: #34d39a; }
+  .fail { background: rgba(255,107,107,.15); color: #ff6b6b; }
+  #summary { position: sticky; top: 0; background: #0b0e18; padding: 10px 0 14px; z-index: 5;
+             font-weight: 600; border-bottom: 1px solid #232e4c; margin-bottom: 18px; }
+</style>
+</head>
+<body>
+  <h1>Responsive preview — Tution Management</h1>
+  <p class="lede">Each frame is the real stylesheet rendered at a device width. The badge fails if
+  that viewport can scroll sideways, or if a table still forces its own scrollbar. Scroll each rail
+  horizontally to compare widths; regenerate with <code>node tools/gen-responsive-preview.mjs</code>
+  after changing styles.</p>
+  <div id="summary">Building frames…</div>
+  <div id="groups"></div>
+  
+<script type="text/css" id="app-css">/* ============================================================================
+   Tution Management — design system
+   Dark "night-study" console: deep navy surfaces, saffron (learning-lamp)
+   as the brand accent, emerald for money-in, coral for overdue, violet for
+   subscription/time. Display type: Space Grotesk. Body/UI: Inter.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #0e1220;
+  --bg-grad: radial-gradient(1200px 600px at 78% -8%, #1a2136 0%, rgba(26, 33, 54, 0) 60%),
+    radial-gradient(900px 500px at 0% 0%, #16223a 0%, rgba(22, 34, 58, 0) 55%), #0e1220;
+  --surface: #161d2e;
+  --surface-2: #1c2540;
+  --surface-3: #232e4c;
+  --border: #26304a;
+  --border-soft: #1e2740;
+
+  /* Text */
+  --text: #e9edf7;
+  --text-dim: #9aa6c2;
+  --text-faint: #6b7896;
+
+  /* Accents */
+  --saffron: #f6a93b;
+  --saffron-strong: #ffbc55;
+  --saffron-600: #e8971f;
+  --saffron-soft: rgba(246, 169, 59, 0.14);
+  --emerald: #34d39a;
+  --emerald-soft: rgba(52, 211, 154, 0.13);
+  --coral: #ff6b6b;
+  --coral-soft: rgba(255, 107, 107, 0.13);
+  --violet: #9b8cff;
+  --violet-soft: rgba(155, 140, 255, 0.14);
+  --sky: #4cc2ff;
+  --sky-soft: rgba(76, 194, 255, 0.13);
+
+  /* Shape */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.75);
+  --shadow-lg: 0 30px 60px -24px rgba(0, 0, 0, 0.8);
+  --ring: 0 0 0 3px var(--saffron-soft);
+
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --sidebar-w: 258px;
+  --topbar-h: 66px;
+  --maxw: 1280px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  background-attachment: fixed;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2a3555; border-radius: 20px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── App shell / layout ──────────────────────────────────────────────────── */
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  border-right: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(22, 29, 46, 0.7), rgba(14, 18, 32, 0.7));
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  z-index: 40;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 20px;
+}
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--saffron-strong), var(--saffron-600));
+  color: #0e1220;
+  box-shadow: 0 8px 20px -8px rgba(246, 169, 59, 0.7);
+  flex-shrink: 0;
+}
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+.brand-sub {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+  padding: 16px 12px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 14.5px;
+  transition: background 0.15s, color 0.15s;
+  border: 1px solid transparent;
+}
+.nav-item:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+.nav-item.active {
+  background: var(--saffron-soft);
+  color: var(--saffron-strong);
+  border-color: rgba(246, 169, 59, 0.25);
+}
+.nav-item.active svg {
+  color: var(--saffron);
+}
+.nav-spacer { flex: 1; }
+
+.sidebar-foot {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 14px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 clamp(16px, 3vw, 34px);
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(14, 18, 32, 0.72);
+  backdrop-filter: blur(10px);
+  z-index: 30;
+}
+.topbar h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.topbar-sub {
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+.topbar-spacer { flex: 1; }
+
+.hamburger {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+.content {
+  padding: clamp(18px, 3vw, 34px);
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  flex: 1;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.page-head .eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--saffron);
+  font-weight: 600;
+}
+.page-head h2 {
+  font-size: clamp(22px, 3.4vw, 30px);
+  margin-top: 4px;
+}
+.page-head p {
+  color: var(--text-dim);
+  margin: 6px 0 0;
+  max-width: 60ch;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+.card {
+  background: linear-gradient(180deg, var(--surface), rgba(22, 29, 46, 0.6));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.card-head h3 { font-size: 16px; }
+.card-head .card-sub { font-size: 12.5px; color: var(--text-faint); margin-top: 2px; }
+.card-head .hstack { flex-wrap: wrap; justify-content: flex-end; }
+.card-body { padding: 20px; }
+.card-body.tight { padding: 8px; }
+
+/* Compact select that lives in a card header next to its action button. */
+.head-select {
+  height: 36px;
+  padding: 6px 30px 6px 10px;
+  font-size: 11px;
+  flex: 1 1 140px;
+  min-width: 0;
+  max-width: 200px;
+}
+
+.grid { display: grid; gap: 18px; }
+.grid-kpi { grid-template-columns: repeat(4, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.dash-cols { grid-template-columns: 1.5fr 1fr; align-items: start; }
+
+/* ── Overflow discipline ─────────────────────────────────────────────────────
+   Grid and flex children default to min-width:auto, so anything wide inside
+   one of them (a table, a chart, an unbroken name) inflates its track and
+   drags the whole page sideways. Giving them a real floor of 0 keeps wide
+   content where it belongs — scrolling inside .table-scroll — so the page
+   itself never scrolls horizontally.
+   -------------------------------------------------------------------------- */
+.grid > *,
+.stack > *,
+.card,
+.card-body,
+.table-scroll,
+.card-head > :first-child,
+.person,
+.person .who,
+.kv,
+.topbar > div {
+  min-width: 0;
+}
+.person .who .nm,
+.person .who .sub,
+.card-head h3,
+.kv .v,
+.kv .k {
+  overflow-wrap: anywhere;
+}
+.topbar h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Stat cards ──────────────────────────────────────────────────────────── */
+.stat {
+  position: relative;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  overflow: hidden;
+}
+.stat::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--tone, var(--saffron));
+  opacity: 0.9;
+}
+.stat-top { display: flex; align-items: center; justify-content: space-between; }
+.stat-icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: var(--tone-soft, var(--saffron-soft));
+  color: var(--tone, var(--saffron));
+}
+.stat-label { color: var(--text-dim); font-size: 13px; font-weight: 500; }
+.stat-value { font-size: 27px; margin-top: 12px; font-weight: 600; }
+.stat-foot { font-size: 12.5px; color: var(--text-faint); margin-top: 6px; }
+.stat-foot b { color: var(--text-dim); font-weight: 600; }
+
+/* ── Badges & chips ──────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.badge.active { color: var(--emerald); background: var(--emerald-soft); border-color: rgba(52, 211, 154, 0.25); }
+.badge.expiring { color: var(--saffron-strong); background: var(--saffron-soft); border-color: rgba(246, 169, 59, 0.25); }
+.badge.expired { color: var(--coral); background: var(--coral-soft); border-color: rgba(255, 107, 107, 0.25); }
+.badge.paused { color: var(--saffron); background: var(--saffron-soft); border-color: rgba(246, 169, 59, 0.3); }
+.badge.neutral { color: var(--text-dim); background: var(--surface-2); border-color: var(--border); }
+.badge.violet { color: var(--violet); background: var(--violet-soft); border-color: rgba(155, 140, 255, 0.25); }
+.badge.sky { color: var(--sky); background: var(--sky-soft); border-color: rgba(76, 194, 255, 0.25); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.05s, background 0.15s, border-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible { outline: none; box-shadow: var(--ring); }
+.btn-primary { background: linear-gradient(135deg, var(--saffron-strong), var(--saffron-600)); color: #12151f; }
+.btn-primary:hover { filter: brightness(1.05); }
+.btn-ghost { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.btn-ghost:hover { background: var(--surface-3); }
+.btn-subtle { background: transparent; color: var(--text-dim); border-color: var(--border); }
+.btn-subtle:hover { color: var(--text); background: var(--surface); }
+.btn-danger { background: var(--coral-soft); color: var(--coral); border-color: rgba(255, 107, 107, 0.3); }
+.btn-danger:hover { background: rgba(255, 107, 107, 0.2); }
+.btn-sm { padding: 7px 12px; font-size: 13px; }
+.btn-icon { padding: 9px; }
+.btn-block { width: 100%; }
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.field > label { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+.field .hint { font-size: 12px; color: var(--text-faint); }
+.field .err { font-size: 12.5px; color: var(--coral); }
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  font-size: 11px;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: var(--saffron);
+  box-shadow: var(--ring);
+}
+.textarea { resize: vertical; min-height: 84px; line-height: 1.55; }
+.select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa6c2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.form-grid .full { grid-column: 1 / -1; }
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search svg { position: absolute; left: 12px; color: var(--text-faint); pointer-events: none; }
+.search .input { padding-left: 38px; }
+
+/* Subject picker checkboxes */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 8px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 13.5px;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.check:hover { border-color: var(--surface-3); }
+.check.on { border-color: var(--saffron); background: var(--saffron-soft); color: var(--saffron-strong); }
+.check .fee { font-size: 12px; color: var(--text-faint); }
+.check.on .fee { color: var(--saffron); }
+
+/* ── Class-filtered subject picker ───────────────────────────────────────── */
+.subject-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 2px 0 12px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+.subject-filter .select { max-width: 260px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+.chip .chip-sub { color: var(--text-faint); }
+.chip .chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1px;
+  line-height: 1;
+  border-radius: 6px;
+}
+.chip .chip-x:hover { color: var(--saffron-strong); }
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+/* A table may scroll inside its own card (never the page). Each table can
+   lower its comfortable floor with --tbl-min; below 860px the floor is
+   dropped entirely and rows restack as labelled cards. */
+.table-scroll { overflow-x: auto; }
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: var(--tbl-min, 640px);
+}
+.tbl th {
+  text-align: left;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+.tbl td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 14px;
+  vertical-align: middle;
+}
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tbody tr { transition: background 0.12s; }
+.tbl tbody tr:hover { background: rgba(28, 37, 64, 0.5); }
+.tbl .right { text-align: right; }
+.tbl .muted { color: var(--text-dim); }
+/* Cell roles — used by the stacked card layout below 860px. */
+.tbl td.cell-check { width: 40px; }
+.tbl td.cell-runway { min-width: 140px; }
+.tbl td.cell-actions { white-space: nowrap; }
+
+.person { display: flex; align-items: center; gap: 11px; }
+.avatar {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 13px;
+  color: #10131d;
+  background: linear-gradient(135deg, var(--saffron-strong), var(--saffron-600));
+}
+.avatar.violet { background: linear-gradient(135deg, #b6a9ff, #7d6cf0); color: #fff; }
+.avatar.sky { background: linear-gradient(135deg, #7fd6ff, #35a9f0); color: #08243a; }
+.person .who { display: flex; flex-direction: column; }
+.person .who .nm { font-weight: 600; }
+.person .who .sub { font-size: 12px; color: var(--text-faint); }
+
+/* ── Subscription runway (signature element) ─────────────────────────────── */
+.runway {
+  --pct: 100%;
+  --hue: var(--emerald);
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+  min-width: 90px;
+}
+.runway > span {
+  position: absolute;
+  inset: 0;
+  width: var(--pct);
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--hue) 55%, transparent), var(--hue));
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.runway.expired > span { width: 100%; background: repeating-linear-gradient(45deg, var(--coral), var(--coral) 6px, rgba(255,107,107,0.5) 6px, rgba(255,107,107,0.5) 12px); }
+
+.expiry-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  align-items: center;
+  padding: 13px 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.expiry-row:last-child { border-bottom: none; }
+.expiry-meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; grid-column: 1 / -1; }
+.days-big { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.days-big.ok { color: var(--emerald); }
+.days-big.warn { color: var(--saffron-strong); }
+.days-big.bad { color: var(--coral); }
+
+/* ── Fee breakdown ───────────────────────────────────────────────────────── */
+.breakdown { display: flex; flex-direction: column; gap: 2px; }
+.breakdown .row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px dashed var(--border-soft);
+}
+.breakdown .row.total {
+  border-bottom: none; margin-top: 4px; padding-top: 14px;
+  border-top: 1px solid var(--border); font-size: 16px;
+}
+.breakdown .row .k { color: var(--text-dim); }
+.breakdown .row.total .k { color: var(--text); font-weight: 600; }
+.breakdown .row .v { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.breakdown .row.total .v { color: var(--saffron-strong); font-size: 20px; font-weight: 700; }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 17, 0.66);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 16px;
+  z-index: 60;
+  overflow-y: auto;
+  animation: fade 0.15s ease;
+}
+.modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: pop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.modal.wide { max-width: 760px; }
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--border-soft);
+}
+.modal-head h3 { font-size: 17px; }
+.modal-body { padding: 22px; }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 22px; border-top: 1px solid var(--border-soft);
+}
+.x-btn {
+  background: transparent; border: none; color: var(--text-faint);
+  cursor: pointer; padding: 6px; border-radius: 8px; display: grid; place-items: center;
+}
+.x-btn:hover { background: var(--surface-2); color: var(--text); }
+
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+/* Filters share the row evenly and wrap instead of squeezing each other. */
+.toolbar > .search,
+.toolbar > .select { flex: 1 1 190px; min-width: 0; }
+.toolbar > .hstack { flex: 1 1 250px; min-width: 0; }
+.toolbar > .hstack .input { min-width: 0; }
+.toolbar .grow { flex: 1 1 200px; min-width: 0; }
+.row-actions { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 48px 20px;
+  color: var(--text-dim);
+}
+.empty .ic {
+  width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center;
+  background: var(--surface-2); color: var(--text-faint); margin-bottom: 4px;
+}
+.empty h4 { font-size: 16px; color: var(--text); }
+
+.spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--surface-3); border-top-color: var(--saffron);
+  animation: spin 0.8s linear infinite; margin: 40px auto;
+}
+.center-load { display: grid; place-items: center; padding: 40px; }
+
+.kv { display: flex; flex-direction: column; gap: 3px; }
+.kv .k { font-size: 12px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.kv .v { font-size: 15px; font-weight: 500; }
+
+.stack { display: flex; flex-direction: column; gap: 18px; }
+.hstack { display: flex; align-items: center; gap: 10px; }
+.wrap { flex-wrap: wrap; }
+.mt-0 { margin-top: 0; }
+.divider { height: 1px; background: var(--border-soft); margin: 4px 0; }
+.link { color: var(--saffron-strong); font-weight: 600; cursor: pointer; }
+.link:hover { text-decoration: underline; }
+
+.tag-pill { display:inline-flex; padding: 3px 9px; border-radius: 7px; background: var(--surface-2); border:1px solid var(--border); font-size: 12px; color: var(--text-dim); margin: 2px; }
+
+.callout {
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-sm);
+  background: var(--sky-soft); border: 1px solid rgba(76,194,255,0.25); color: var(--text);
+  font-size: 13.5px;
+}
+.callout.warn { background: var(--saffron-soft); border-color: rgba(246,169,59,0.25); }
+.callout svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.rise { animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.rise-1 { animation-delay: 0.04s; }
+.rise-2 { animation-delay: 0.08s; }
+.rise-3 { animation-delay: 0.12s; }
+.rise-4 { animation-delay: 0.16s; }
+
+/* ── Drawer / responsive ─────────────────────────────────────────────────────
+   What changes, and where:
+     ≤1100px  landscape tablet / small laptop — paired cards go single-file,
+              the KPI grid halves, table cells tighten, secondary columns drop
+     ≤960px   the sidebar becomes a drawer behind the hamburger
+     ≤860px   data tables restack as labelled cards — nothing scrolls sideways
+     ≤620px   phones — one-column forms, full-width filters, tighter chrome
+     ≤460px   small phones — compact stat cards
+   -------------------------------------------------------------------------- */
+.scrim { display: none; }
+
+@media (max-width: 1100px) {
+  .grid-kpi { grid-template-columns: repeat(2, 1fr); }
+  .grid-2,
+  .dash-cols { grid-template-columns: minmax(0, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .tbl th { padding: 11px 12px; }
+  .tbl td { padding: 11px 12px; }
+  /* When the card is only a hair narrower than the table's comfortable floor,
+     let the cells squeeze instead of showing a scrollbar. */
+  table.tbl { min-width: min(var(--tbl-min, 640px), 100%); }
+}
+
+/* Lower-priority columns step out while the table is still a table. Below
+   860px they return as labelled rows in the stacked layout, so nothing is
+   permanently hidden from the user. */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .hide-md { display: none; }
+}
+
+@media (max-width: 960px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: 280px;
+    transform: translateX(-102%);
+    transition: transform 0.25s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .hamburger { display: inline-flex; }
+  .scrim.show {
+    display: block;
+    position: fixed; inset: 0; z-index: 35;
+    background: rgba(6, 9, 17, 0.6); backdrop-filter: blur(2px);
+  }
+}
+
+/* ── Tables → stacked cards ──────────────────────────────────────────────────
+   Every cell carries its own heading in data-label, so the header row can be
+   dropped and each record reads top-to-bottom as a small card. This removes
+   the need for a 640px-wide table on phones and tablets entirely — which is
+   what caused the horizontal scrollbar.
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .table-scroll { overflow-x: visible; }
+  .card-body.tight { padding: 12px; }
+
+  /* `table.tbl` (not `.tbl`) so this out-ranks the min() floor set above. */
+  table.tbl { display: block; min-width: 0; }
+  .tbl thead { display: none; }
+  .tbl tbody { display: grid; gap: 10px; }
+  .tbl tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 14px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(28, 37, 64, 0.32);
+  }
+  .tbl tbody tr:hover { background: rgba(28, 37, 64, 0.55); }
+  .tbl td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-width: 0;
+    padding: 5px 0;
+    border-bottom: none;
+    font-size: 13.5px;
+  }
+  .tbl td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .tbl td:not([data-label])::before,
+  .tbl td[data-label='']::before { content: none; }
+  .tbl td.right { text-align: left; }
+
+  /* Headline cell — the record's identity. No label, sits on top regardless
+     of where it falls in the column order. */
+  .tbl td.cell-main { order: -1; padding: 2px 0 10px; margin-bottom: 4px; }
+  .tbl td.cell-main,
+  .tbl tr:last-child td.cell-main { border-bottom: 1px dashed var(--border-soft); }
+  .tbl td.cell-main::before { content: none; }
+
+  /* Row buttons — right-aligned under a hairline, always last. */
+  .tbl td.cell-actions {
+    order: 1;
+    justify-content: flex-end;
+    padding: 10px 0 2px;
+    margin-top: 4px;
+    border-top: 1px dashed var(--border-soft);
+  }
+  .tbl td.cell-actions::before { content: none; }
+
+  /* The runway bar reads better full width, beneath its label. */
+  .tbl td.cell-runway {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .tbl td.cell-empty { justify-content: center; }
+
+  /* Reminders' pick list: checkbox + student on one line, runway below. */
+  .tbl.select-tbl tbody tr {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+  }
+  .tbl.select-tbl td.cell-check { order: -2; padding: 0; }
+  .tbl.select-tbl td.cell-main,
+  .tbl.select-tbl tr:last-child td.cell-main {
+    padding: 0;
+    margin: 0;
+    border-bottom: none;
+  }
+  .tbl.select-tbl td.cell-runway { grid-column: 1 / -1; padding-top: 10px; }
+}
+
+@media (max-width: 620px) {
+  .grid { gap: 14px; }
+  .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .stat-value { font-size: 22px; }
+  .content { padding: 16px; }
+  .topbar h1 { font-size: 16px; }
+  .topbar-sub { display: none; }
+  .topbar .chip { display: none; }
+  .page-head { margin-bottom: 18px; }
+  .card-head { padding: 15px 16px; }
+  .card-body { padding: 16px; }
+  /* Filters and header controls take a full line instead of crowding. */
+  .toolbar > *,
+  .toolbar .grow,
+  .head-select { flex-basis: 100%; max-width: none; font-size: 10px; }
+  .subject-filter .select { max-width: none; }
+  .overlay { padding: 3vh 12px; }
+  .modal-head, .modal-foot { padding: 14px 18px; }
+  .modal-body { padding: 18px; }
+}
+
+@media (max-width: 460px) {
+  .grid-kpi { gap: 12px; }
+  .stat { padding: 14px; }
+  .stat-label { font-size: 12px; }
+  .stat-value { font-size: 19px; }
+  .stat-icon { width: 32px; height: 32px; border-radius: 9px; }
+  .card-head .hstack { width: 100%; }
+  .card-head .hstack > * { flex: 1 1 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+</script>
+<script type="text/html" id="page-0" data-label="Students">
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FE</div>
+      <div>
+        <div class="brand-name">Feasy</div>
+        <div class="brand-sub">Workspace</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <a class="nav-item active">Dashboard</a>
+      <a class="nav-item">Members</a>
+      <a class="nav-item">Payments</a>
+      <div class="nav-label">Engage</div>
+      <a class="nav-item">Reminders</a>
+      <a class="nav-item">Plans &amp; Pricing</a>
+    </nav>
+    <div class="nav-spacer"></div>
+    <div class="sidebar-foot">Feasy v1.0</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger">≡</button>
+      <div>
+        <h1>Students</h1>
+        <div class="topbar-sub">Roster and subscription runways</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="chip">Feasy Workspace</span>
+    </header>
+    <div class="content">
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Roster</div>
+    <h2>Students</h2>
+    <p>Everyone enrolled at your centre, with live subscription runways.</p>
+  </div>
+  <button class="btn btn-primary">Enroll student</button>
+</div>
+<div class="toolbar">
+  <div class="search grow"><input class="input" placeholder="Search by student, parent or phone…"></div>
+  <select class="select"><option>All classes</option></select>
+  <select class="select"><option>Any status</option></select>
+  <select class="select"><option>Sort: Expiring first</option></select>
+</div>
+<section class="card">
+  <div class="card-body tight">
+    <div class="table-scroll">
+      <table class="tbl">
+        <thead><tr>
+          <th>Student</th><th>Class</th><th class="hide-md">Subjects</th>
+          <th class="right">Fee / mo</th><th>Subscription</th>
+          <th class="hide-md">Status</th><th class="right">Actions</th>
+        </tr></thead>
+        <tbody>
+          
+  <tr>
+    <td class="cell-main">
+      <span class="person">
+        <span class="avatar">AA</span>
+        <span class="who"><span class="nm">Aarav Sharma</span><span class="sub">Meena Sharma</span></span>
+      </span>
+    </td>
+    <td class="muted" data-label="Class">Class 8</td>
+    <td class="muted hide-md" data-label="Subjects"><span class="badge neutral">4</span></td>
+    <td class="right num" data-label="Fee / mo">₹3,400</td>
+    <td class="cell-runway" data-label="Subscription">
+  <div style="display:flex;flex-direction:column;gap:6px;min-width:96px">
+    <div class="runway" style="--pct:72%;--hue:var(--emerald)"><span></span></div>
+    <div class="hstack" style="gap:8px">
+      <span class="days-big ok">21</span>
+      <span style="font-size:12px;color:var(--text-faint)">days left</span>
+    </div>
+  </div></td>
+    <td class="hide-md" data-label="Status"><span class="badge active"><span class="dot"></span>Active</span></td>
+    <td class="cell-actions">
+      <span class="row-actions">
+        <button class="btn btn-subtle btn-sm btn-icon">👁</button>
+        <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+        <button class="btn btn-danger btn-sm btn-icon">🗑</button>
+      </span>
+    </td>
+  </tr>
+          
+  <tr>
+    <td class="cell-main">
+      <span class="person">
+        <span class="avatar">VA</span>
+        <span class="who"><span class="nm">Vaishnavi Krishnamurthy</span><span class="sub">Ramachandran Krishnamurthy</span></span>
+      </span>
+    </td>
+    <td class="muted" data-label="Class">Class 12</td>
+    <td class="muted hide-md" data-label="Subjects"><span class="badge neutral">4</span></td>
+    <td class="right num" data-label="Fee / mo">₹12,50,000</td>
+    <td class="cell-runway" data-label="Subscription">
+  <div style="display:flex;flex-direction:column;gap:6px;min-width:96px">
+    <div class="runway" style="--pct:18%;--hue:var(--saffron)"><span></span></div>
+    <div class="hstack" style="gap:8px">
+      <span class="days-big warn">5</span>
+      <span style="font-size:12px;color:var(--text-faint)">days left</span>
+    </div>
+  </div></td>
+    <td class="hide-md" data-label="Status"><span class="badge expiring"><span class="dot"></span>Expiring</span></td>
+    <td class="cell-actions">
+      <span class="row-actions">
+        <button class="btn btn-subtle btn-sm btn-icon">👁</button>
+        <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+        <button class="btn btn-danger btn-sm btn-icon">🗑</button>
+      </span>
+    </td>
+  </tr>
+          
+  <tr>
+    <td class="cell-main">
+      <span class="person">
+        <span class="avatar">DE</span>
+        <span class="who"><span class="nm">Dev Patel</span><span class="sub">Nirali Patel</span></span>
+      </span>
+    </td>
+    <td class="muted" data-label="Class">Nursery</td>
+    <td class="muted hide-md" data-label="Subjects"><span class="badge neutral">4</span></td>
+    <td class="right num" data-label="Fee / mo">₹1,200</td>
+    <td class="cell-runway" data-label="Subscription">
+  <div style="display:flex;flex-direction:column;gap:6px;min-width:96px">
+    <div class="runway" style="--pct:0%;--hue:var(--coral)"><span></span></div>
+    <div class="hstack" style="gap:8px">
+      <span class="days-big bad">0</span>
+      <span style="font-size:12px;color:var(--text-faint)">days left</span>
+    </div>
+  </div></td>
+    <td class="hide-md" data-label="Status"><span class="badge expired"><span class="dot"></span>Expired</span></td>
+    <td class="cell-actions">
+      <span class="row-actions">
+        <button class="btn btn-subtle btn-sm btn-icon">👁</button>
+        <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+        <button class="btn btn-danger btn-sm btn-icon">🗑</button>
+      </span>
+    </td>
+  </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section></div>
+  </div>
+</div></script>
+<script type="text/html" id="page-1" data-label="Classes & Fees (/fees)">
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FE</div>
+      <div>
+        <div class="brand-name">Feasy</div>
+        <div class="brand-sub">Workspace</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <a class="nav-item active">Dashboard</a>
+      <a class="nav-item">Members</a>
+      <a class="nav-item">Payments</a>
+      <div class="nav-label">Engage</div>
+      <a class="nav-item">Reminders</a>
+      <a class="nav-item">Plans &amp; Pricing</a>
+    </nav>
+    <div class="nav-spacer"></div>
+    <div class="sidebar-foot">Feasy v1.0</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger">≡</button>
+      <div>
+        <h1>Students</h1>
+        <div class="topbar-sub">Roster and subscription runways</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="chip">Feasy Workspace</span>
+    </header>
+    <div class="content">
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Configuration</div>
+    <h2>Classes &amp; Fees</h2>
+    <p>Set the base fee for each class and the monthly add-on for each subject.</p>
+  </div>
+</div>
+<div class="grid grid-2">
+  <section class="card">
+    <div class="card-head">
+      <div><h3>Classes</h3><div class="card-sub">14 classes</div></div>
+      <div class="hstack"><button class="btn btn-primary btn-sm">Add class</button></div>
+    </div>
+    <div class="card-body tight">
+      <div class="table-scroll">
+        <table class="tbl" style="--tbl-min:420px">
+          <thead><tr><th>Class</th><th class="right">Base fee / mo</th><th class="right">Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="cell-main" style="font-weight:600">Class 8</td>
+              <td class="right num" data-label="Base fee / mo">₹2,400</td>
+              <td class="cell-actions"><span class="row-actions">
+                <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+                <button class="btn btn-danger btn-sm btn-icon">🗑</button></span></td>
+            </tr>
+            <tr>
+              <td class="cell-main" style="font-weight:600">Class 12 (Science stream)</td>
+              <td class="right num" data-label="Base fee / mo">₹6,000</td>
+              <td class="cell-actions"><span class="row-actions">
+                <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+                <button class="btn btn-danger btn-sm btn-icon">🗑</button></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-head">
+      <div><h3>Subjects</h3><div class="card-sub">38 subjects</div></div>
+      <div class="hstack">
+        <div class="hstack wrap" style="gap:8px;flex:1 1 auto;justify-content:flex-end">
+          <select class="select head-select"><option>All classes</option></select>
+          <button class="btn btn-primary btn-sm">Add subject</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body tight">
+      <div class="table-scroll">
+        <table class="tbl" style="--tbl-min:520px">
+          <thead><tr><th>Subject</th><th>Class</th><th class="right">Add-on / mo</th><th>Status</th><th class="right">Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="cell-main"><span style="font-weight:600">Mathematics</span><span class="tag-pill">MATH</span></td>
+              <td data-label="Class">Class 8</td>
+              <td class="right num" data-label="Add-on / mo">₹500</td>
+              <td data-label="Status"><span class="badge active"><span class="dot"></span>Active</span></td>
+              <td class="cell-actions"><span class="row-actions">
+                <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+                <button class="btn btn-danger btn-sm btn-icon">🗑</button></span></td>
+            </tr>
+            <tr>
+              <td class="cell-main"><span style="font-weight:600">Environmental Science</span><span class="tag-pill">EVS</span></td>
+              <td data-label="Class">Class 12 (Science stream)</td>
+              <td class="right num" data-label="Add-on / mo">₹750</td>
+              <td data-label="Status"><span class="badge neutral">Hidden</span></td>
+              <td class="cell-actions"><span class="row-actions">
+                <button class="btn btn-subtle btn-sm btn-icon">✎</button>
+                <button class="btn btn-danger btn-sm btn-icon">🗑</button></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div></div>
+  </div>
+</div></script>
+<script type="text/html" id="page-2" data-label="Reminders (/reminders)">
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FE</div>
+      <div>
+        <div class="brand-name">Feasy</div>
+        <div class="brand-sub">Workspace</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <a class="nav-item active">Dashboard</a>
+      <a class="nav-item">Members</a>
+      <a class="nav-item">Payments</a>
+      <div class="nav-label">Engage</div>
+      <a class="nav-item">Reminders</a>
+      <a class="nav-item">Plans &amp; Pricing</a>
+    </nav>
+    <div class="nav-spacer"></div>
+    <div class="sidebar-foot">Feasy v1.0</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger">≡</button>
+      <div>
+        <h1>Students</h1>
+        <div class="topbar-sub">Roster and subscription runways</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="chip">Feasy Workspace</span>
+    </header>
+    <div class="content">
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Retention</div>
+    <h2>Reminders</h2>
+    <p>Nudge parents before a subscription lapses — over WhatsApp or SMS.</p>
+  </div>
+  <button class="btn btn-primary">Send (2)</button>
+</div>
+<div class="grid dash-cols">
+  <section class="card">
+    <div class="card-head">
+      <div><h3>Due for a reminder</h3><div class="card-sub">Subscriptions expiring within the window</div></div>
+      <div class="hstack"><select class="select head-select"><option>Next 7 days</option></select></div>
+    </div>
+    <div class="card-body tight">
+      <label class="hstack" style="gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-soft)">
+        <input type="checkbox"><span style="font-size:13px;color:var(--text-dim)">Select all (3)</span>
+      </label>
+      <div class="table-scroll">
+        <table class="tbl select-tbl">
+          <tbody>
+            <tr>
+              <td class="cell-check"><input type="checkbox"></td>
+              <td class="cell-main"><span class="person"><span class="avatar">AS</span>
+                <span class="who"><span class="nm">Aarav Sharma</span><span class="sub">Meena Sharma · +91 98765 43210</span></span></span></td>
+              <td class="cell-runway" data-label="Subscription">
+  <div style="display:flex;flex-direction:column;gap:6px;min-width:96px">
+    <div class="runway" style="--pct:18%;--hue:var(--saffron)"><span></span></div>
+    <div class="hstack" style="gap:8px">
+      <span class="days-big warn">5</span>
+      <span style="font-size:12px;color:var(--text-faint)">days left</span>
+    </div>
+  </div></td>
+            </tr>
+            <tr>
+              <td class="cell-check"><input type="checkbox"></td>
+              <td class="cell-main"><span class="person"><span class="avatar">VK</span>
+                <span class="who"><span class="nm">Vaishnavi Krishnamurthy</span><span class="sub">Ramachandran Krishnamurthy · +91 90000 12345</span></span></span></td>
+              <td class="cell-runway" data-label="Subscription">
+  <div style="display:flex;flex-direction:column;gap:6px;min-width:96px">
+    <div class="runway" style="--pct:4%;--hue:var(--coral)"><span></span></div>
+    <div class="hstack" style="gap:8px">
+      <span class="days-big bad">1</span>
+      <span style="font-size:12px;color:var(--text-faint)">days left</span>
+    </div>
+  </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-head">
+      <div><h3>Recent reminders</h3><div class="card-sub">Delivery log</div></div>
+    </div>
+    <div class="card-body tight">
+      <div class="expiry-row" style="grid-template-columns:1fr auto">
+        <div>
+          <div class="hstack wrap" style="gap:8px">
+            <span style="font-weight:600">Vaishnavi Krishnamurthy</span>
+            <span class="badge active"><span class="dot"></span>sent</span>
+            <span class="badge neutral">whatsapp</span>
+          </div>
+          <div style="font-size:12.5px;color:var(--text-faint);margin-top:4px;max-width:46ch">
+            Namaste Ramachandran, Vaishnavi's subscription at Feasy Workspace ends in 1 day…
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-faint);white-space:nowrap;justify-self:end">2h ago</div>
+      </div>
+    </div>
+  </section>
+</div></div>
+  </div>
+</div></script>
+<script type="text/html" id="page-3" data-label="Dashboard">
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FE</div>
+      <div>
+        <div class="brand-name">Feasy</div>
+        <div class="brand-sub">Workspace</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <a class="nav-item active">Dashboard</a>
+      <a class="nav-item">Members</a>
+      <a class="nav-item">Payments</a>
+      <div class="nav-label">Engage</div>
+      <a class="nav-item">Reminders</a>
+      <a class="nav-item">Plans &amp; Pricing</a>
+    </nav>
+    <div class="nav-spacer"></div>
+    <div class="sidebar-foot">Feasy v1.0</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger">≡</button>
+      <div>
+        <h1>Students</h1>
+        <div class="topbar-sub">Roster and subscription runways</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="chip">Feasy Workspace</span>
+    </header>
+    <div class="content">
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Overview</div>
+    <h2>Good to see you</h2>
+    <p>Here's how Feasy Workspace is doing — collections, dues and whose subscription is about to lapse.</p>
+  </div>
+  <button class="btn btn-primary">Add member</button>
+</div>
+<div class="grid grid-kpi" style="margin-bottom:18px">
+  
+  <div class="stat" style="--tone:var(--saffron);--tone-soft:var(--saffron-soft)">
+    <div class="stat-top"><span class="stat-label">Expected / month</span><span class="stat-icon">₹</span></div>
+    <div class="stat-value num">₹4,86,000</div>
+    <div class="stat-foot">from <b>128</b> active students</div>
+  </div>
+  <div class="stat" style="--tone:var(--emerald);--tone-soft:var(--emerald-soft)">
+    <div class="stat-top"><span class="stat-label">Collected this month</span><span class="stat-icon">₹</span></div>
+    <div class="stat-value num">₹3,12,500</div>
+    <div class="stat-foot">from <b>128</b> active students</div>
+  </div>
+  <div class="stat" style="--tone:var(--coral);--tone-soft:var(--coral-soft)">
+    <div class="stat-top"><span class="stat-label">Pending this month</span><span class="stat-icon">₹</span></div>
+    <div class="stat-value num">₹1,73,500</div>
+    <div class="stat-foot">from <b>128</b> active students</div>
+  </div>
+  <div class="stat" style="--tone:var(--violet);--tone-soft:var(--violet-soft)">
+    <div class="stat-top"><span class="stat-label">Pending yearly income</span><span class="stat-icon">₹</span></div>
+    <div class="stat-value num">₹41,26,000</div>
+    <div class="stat-foot">from <b>128</b> active students</div>
+  </div>
+</div>
+<div class="grid grid-2">
+  <section class="card"><div class="card-head"><div><h3>Students by class</h3><div class="card-sub">Active enrolment spread</div></div></div>
+    <div class="card-body"><div style="height:220px;background:var(--surface-2);border-radius:10px"></div></div></section>
+  <section class="card">
+    <div class="card-head"><div><h3>Expiring soonest</h3><div class="card-sub">Renewals to chase first</div></div>
+      <div class="hstack"><button class="btn btn-subtle btn-sm">Reminders</button></div></div>
+    <div class="card-body tight"><div style="padding:0 12px">
+      <a class="expiry-row">
+        <span class="person"><span class="avatar">VK</span>
+          <span class="who"><span class="nm">Vaishnavi Krishnamurthy</span><span class="sub">Class 12 (Science stream)</span></span></span>
+        <span style="justify-self:end">
+  <div style="display:flex;flex-direction:column;gap:6px;min-width:96px">
+    <div class="runway" style="--pct:4%;--hue:var(--coral)"><span></span></div>
+    <div class="hstack" style="gap:8px">
+      <span class="days-big bad">1</span>
+      <span style="font-size:12px;color:var(--text-faint)">days left</span>
+    </div>
+  </div></span>
+      </a>
+    </div></div>
+  </section>
+</div></div>
+  </div>
+</div></script>
+<script>
+  const WIDTHS = [360,390,768,834,1024,1280];
+  const cssText = document.getElementById('app-css').textContent;
+  const pages = [...document.querySelectorAll('script[type="text/html"]')];
+
+  /* Build: one rail of iframes per page, each iframe at a device width. */
+  const groups = document.getElementById('groups');
+  for (const p of pages) {
+    const sec = document.createElement('section');
+    sec.className = 'group';
+    sec.innerHTML = '<h2>' + p.dataset.label + '</h2><div class="rail"></div>';
+    const rail = sec.querySelector('.rail');
+    for (const w of WIDTHS) {
+      const fig = document.createElement('figure');
+      fig.className = 'frame';
+      fig.dataset.w = w;
+      fig.innerHTML =
+        '<figcaption><b>' + p.dataset.label + '</b> · ' + w + 'px ' +
+        '<span class="verdict">checking…</span></figcaption>' +
+        '<iframe width="' + w + '" height="700"></iframe>';
+      rail.appendChild(fig);
+      const d = fig.querySelector('iframe').contentDocument;
+      d.open();
+      d.write(
+        '<!doctype html><html><head><meta charset="utf-8"><style>' +
+        cssText + '</style></head><body>' + p.textContent + '</body></html>'
+      );
+      d.close();
+    }
+    groups.appendChild(sec);
+  }
+
+  /* Assert: nothing may scroll sideways. Below 860px tables must not scroll
+     internally either — they are supposed to have restacked as cards. */
+  function check() {
+    let pass = 0, fail = 0;
+    document.querySelectorAll('.frame').forEach((fig) => {
+      const v = fig.querySelector('.verdict');
+      const d = fig.querySelector('iframe').contentDocument;
+      if (!d || !d.body) { v.textContent = 'no doc'; return; }
+      const page = d.documentElement.scrollWidth - d.documentElement.clientWidth;
+      const inner = [...d.querySelectorAll('.table-scroll')]
+        .map((el) => el.scrollWidth - el.clientWidth)
+        .filter((n) => n > 1);
+      const problems = [];
+      if (page > 1) problems.push('page scrolls ' + page + 'px');
+      if (inner.length) problems.push(inner.length + ' table(s) scroll inside');
+      const bad = page > 1 || (inner.length > 0 && +fig.dataset.w <= 860);
+      v.className = 'verdict ' + (bad ? 'fail' : 'pass');
+      v.textContent = bad
+        ? problems.join(' · ')
+        : (problems.length ? 'ok (contained: ' + problems.join(', ') + ')' : 'no h-scroll');
+      bad ? fail++ : pass++;
+    });
+    const s = document.getElementById('summary');
+    s.textContent = fail
+      ? fail + ' viewport(s) still scroll horizontally — ' + pass + ' clean'
+      : 'All ' + pass + ' viewports clean — no horizontal scrolling anywhere';
+    s.style.color = fail ? '#ff6b6b' : '#34d39a';
+  }
+  addEventListener('load', () => setTimeout(check, 300));
+</script>
+</body>
+</html>

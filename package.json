@@ -1,0 +1,25 @@
+{
+  "name": "feasy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Feasy — Universal Subscription, Membership & Fee Management SaaS for coaching centers, gyms, libraries, and subscription businesses.",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n SERVER,CLIENT -c yellow.bold,magenta.bold \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "start": "npm --prefix server start",
+    "build": "npm --prefix client run build",
+    "seed": "npm --prefix server run seed",
+    "lint": "npm --prefix client run lint",
+    "verify:ui": "npm --prefix client run verify:ui",
+    "preview:ui": "node tools/gen-responsive-preview.mjs",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

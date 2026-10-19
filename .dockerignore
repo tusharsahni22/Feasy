@@ -1,0 +1,32 @@
+# Dependencies — installed fresh inside the image (host copies may be OS-specific)
+**/node_modules
+
+# Build outputs — the client is rebuilt inside the image
+**/dist
+**/build
+
+# Secrets / local env — provided at runtime via env_file or -e (never baked in)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Version control & docs
+.git
+.gitignore
+*.md
+LICENSE
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS cruft
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml
