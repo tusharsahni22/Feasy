@@ -292,7 +292,7 @@ export default function Attendance() {
                       padding: '12px 14px',
                       fontFamily: 'monospace',
                     }}
-                    placeholder="Scan barcode, enter phone or member code..."
+                    placeholder={`Enter ${labels.memberSingular.toLowerCase()} phone or barcode (e.g. 9876543210)`}
                     value={scanCode}
                     onChange={(e) => setScanCode(e.target.value)}
                     autoFocus
@@ -304,7 +304,7 @@ export default function Attendance() {
                   icon={ScanLine}
                   disabled={scanning || !scanCode.trim()}
                 >
-                  {scanning ? '...' : 'Record'}
+                  {scanning ? '...' : 'Check In / Out'}
                 </Button>
               </div>
             </form>

@@ -147,7 +147,7 @@ export default function StudentSelfCheckIn() {
                     color: '#fff',
                     boxSizing: 'border-box',
                   }}
-                  placeholder="e.g. 9876543210 or MBR-..."
+                  placeholder="Enter 10-digit mobile number (e.g. 9876543210)"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   autoFocus
