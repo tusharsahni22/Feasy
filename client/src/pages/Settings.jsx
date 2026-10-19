@@ -7,6 +7,7 @@ import {
   MessageSquare,
   CheckCircle2,
   XCircle,
+  Building2,
 } from 'lucide-react';
 import { SettingsAPI } from '../api/endpoints.js';
 import { useSettings } from '../context/SettingsContext.jsx';
