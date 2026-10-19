@@ -266,21 +266,33 @@ export default function Attendance() {
 
       {activeTab === 'scanner' && (
         <div className="grid dash-cols">
-          {/* Scanner Box */}
-          <Card title="Barcode / RFID Scanner Gun">
-            <form onSubmit={handleScan} style={{ marginBottom: 20 }}>
+          {/* Scanner / Reception Quick Check Card */}
+          <Card
+            title="Desk Scanner & Quick Check-In"
+            subtitle="USB Barcode Gun, RFID, or Member Search"
+            actions={
+              <Button
+                variant="subtle"
+                size="sm"
+                icon={QrCode}
+                onClick={() => setShowDeskQr(true)}
+              >
+                Print Desk QR
+              </Button>
+            }
+          >
+            <form onSubmit={handleScan} style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', gap: 10 }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                   <input
                     ref={inputRef}
                     className="input"
                     style={{
-                      fontSize: 18,
-                      padding: '14px 16px',
+                      fontSize: 16,
+                      padding: '12px 14px',
                       fontFamily: 'monospace',
-                      letterSpacing: '1px',
                     }}
-                    placeholder="Scan barcode or enter Member ID..."
+                    placeholder="Scan barcode, enter phone or member code..."
                     value={scanCode}
                     onChange={(e) => setScanCode(e.target.value)}
                     autoFocus
@@ -291,15 +303,45 @@ export default function Attendance() {
                   type="submit"
                   icon={ScanLine}
                   disabled={scanning || !scanCode.trim()}
-                  style={{ padding: '0 24px' }}
                 >
-                  {scanning ? '...' : 'Scan / Record'}
+                  {scanning ? '...' : 'Record'}
                 </Button>
               </div>
-              <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-dim)' }}>
-                ⚡ Auto-records Check-In or Check-Out with exact timestamp.
-              </div>
             </form>
+
+            {/* Zero Hardware Banner Callout */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderRadius: 10,
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                marginBottom: 16,
+              }}
+            >
+              <div className="hstack" style={{ gap: 10 }}>
+                <QrCode size={24} color="var(--emerald)" />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-high)' }}>
+                    Zero Hardware Setup Active
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                    Students can scan the Desk QR code using their own smartphone camera.
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={Printer}
+                onClick={() => setShowDeskQr(true)}
+              >
+                Poster
+              </Button>
+            </div>
 
             {lastScanResult && (
               <div
@@ -313,24 +355,24 @@ export default function Attendance() {
                       ? '1px solid rgba(16, 185, 129, 0.3)'
                       : '1px solid rgba(59, 130, 246, 0.3)',
                   borderRadius: 12,
-                  padding: 18,
-                  marginTop: 14,
+                  padding: 16,
+                  marginTop: 8,
                 }}
               >
-                <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+                <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
                   <div className="hstack" style={{ gap: 8 }}>
                     <CheckCircle2
-                      size={22}
+                      size={20}
                       color={lastScanResult.action === 'checked_in' ? 'var(--emerald)' : 'var(--sky)'}
                     />
-                    <strong style={{ fontSize: 17 }}>{lastScanResult.student?.name}</strong>
+                    <strong style={{ fontSize: 16 }}>{lastScanResult.student?.name}</strong>
                   </div>
                   <Badge tone={lastScanResult.action === 'checked_in' ? 'emerald' : 'sky'}>
                     {lastScanResult.action === 'checked_in' ? 'CHECKED IN' : 'CHECKED OUT'}
                   </Badge>
                 </div>
 
-                <div className="grid grid-3" style={{ gap: 10, fontSize: 13 }}>
+                <div className="grid grid-3" style={{ gap: 8, fontSize: 13 }}>
                   <div>
                     <span style={{ color: 'var(--text-faint)' }}>Shift:</span>{' '}
                     <strong>{lastScanResult.student?.shiftTiming || 'General'}</strong>
@@ -346,10 +388,10 @@ export default function Attendance() {
                 </div>
 
                 {lastScanResult.isExpired && (
-                  <div className="callout warn" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <AlertTriangle size={18} />
+                  <div className="callout warn" style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <AlertTriangle size={16} />
                     <span>
-                      <strong>Warning:</strong> Membership expired on {formatDate(lastScanResult.student?.subscriptionEnd)}!
+                      Membership expired on {formatDate(lastScanResult.student?.subscriptionEnd)}! Collect renewal.
                     </span>
                   </div>
                 )}
@@ -358,54 +400,91 @@ export default function Attendance() {
           </Card>
 
           {/* Quick Stats Card */}
-          <Card title="Live Facility Metrics">
+          <Card title="Live Facility Metrics" subtitle={`Occupancy & Daily Traffic`}>
             <div className="grid grid-2" style={{ gap: 14 }}>
-              <div style={{ background: 'var(--bg-elevated)', padding: 16, borderRadius: 10 }}>
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--emerald)' }}>
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  padding: 16,
+                  borderRadius: 10,
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)' }}>CURRENTLY INSIDE</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--emerald)', display: 'inline-block' }} />
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--emerald)', lineHeight: 1 }}>
                   {activeInFacility.length}
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>Currently In Facility</div>
+                <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 4 }}>Active in facility now</div>
               </div>
-              <div style={{ background: 'var(--bg-elevated)', padding: 16, borderRadius: 10 }}>
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-high)' }}>
+
+              <div
+                style={{
+                  background: 'var(--bg-elevated)',
+                  padding: 16,
+                  borderRadius: 10,
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)' }}>TOTAL CHECK-INS</span>
+                  <UserCheck size={14} color="var(--text-dim)" />
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-high)', lineHeight: 1 }}>
                   {attendanceLogs.length}
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>Total Check-Ins Today</div>
+                <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 4 }}>Recorded today</div>
               </div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 14, marginTop: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                Currently Inside ({activeInFacility.length})
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-high)' }}>
+                  Active Members ({activeInFacility.length})
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>1-Click Check Out</span>
               </div>
-              {activeInFacility.slice(0, 4).map((log) => (
-                <div
-                  key={log._id}
-                  className="hstack"
-                  style={{
-                    justifyContent: 'space-between',
-                    padding: '8px 0',
-                    borderBottom: '1px solid var(--border-faint)',
-                    fontSize: 13,
-                  }}
-                >
-                  <div>
-                    <strong>{log.studentId?.name || 'Member'}</strong>
-                    <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                      In: {new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                  <Button
-                    variant="subtle"
-                    size="sm"
-                    icon={LogOut}
-                    onClick={() => quickCheckOut(log)}
-                    disabled={markingId === log._id}
-                  >
-                    Check Out
-                  </Button>
+
+              {activeInFacility.length === 0 ? (
+                <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
+                  No members currently inside.
                 </div>
-              ))}
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
+                  {activeInFacility.map((log) => (
+                    <div
+                      key={log._id}
+                      className="hstack"
+                      style={{
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        background: 'var(--bg-elevated)',
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      <div>
+                        <strong>{log.studentId?.name || 'Member'}</strong>
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                          In: {new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {log.studentId?.shiftTiming ? ` · ${log.studentId.shiftTiming}` : ''}
+                        </div>
+                      </div>
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        icon={LogOut}
+                        onClick={() => quickCheckOut(log)}
+                        disabled={markingId === log._id}
+                      >
+                        Check Out
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
         </div>
