@@ -72,6 +72,8 @@ export const AttendanceAPI = {
   scan: (body) => api.post('/attendance/scan', body).then((r) => r.data),
   list: (params) => api.get('/attendance', { params }).then((r) => r.data),
   manual: (body) => api.post('/attendance/manual', body).then((r) => r.data),
+  bulk: (body) => api.post('/attendance/bulk', body).then((r) => r.data),
+  checkOut: (id, body) => api.patch(`/attendance/${id}/checkout`, body).then((r) => r.data),
 };
 
 export const DiscountsAPI = {

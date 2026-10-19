@@ -30,9 +30,18 @@ const attendanceSchema = new mongoose.Schema(
     checkOut: {
       type: Date,
     },
+    durationMinutes: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ['present', 'absent', 'late', 'half_day'],
+      default: 'present',
+    },
     method: {
       type: String,
-      enum: ['barcode', 'qr', 'manual'],
+      enum: ['barcode', 'qr', 'manual', 'bulk'],
       default: 'barcode',
     },
     notes: {

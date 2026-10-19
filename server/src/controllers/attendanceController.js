@@ -64,7 +64,7 @@ export const scanAttendance = asyncHandler(async (req, res) => {
     action = 'checked_in';
   } else if (!attendance.checkOut) {
     // If already checked in and no check-out, record check-out (or if checked in within 2 minutes, inform already in)
-    const diffMinutes = (Date.now() - new Date(attendance.checkIn).getTime()) / 60000;
+    const diffMinutes = Math.max(0, Math.round((Date.now() - new Date(attendance.checkIn).getTime()) / 60000));
     if (diffMinutes < 1) {
       return res.json({
         message: `${student.name} is already checked in just now.`,
@@ -75,6 +75,7 @@ export const scanAttendance = asyncHandler(async (req, res) => {
     }
 
     attendance.checkOut = new Date();
+    attendance.durationMinutes = diffMinutes;
     await attendance.save();
     action = 'checked_out';
   } else {
@@ -160,16 +161,92 @@ export const manualAttendance = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Student ID is required');
   }
 
+  let duration = 0;
+  if (checkIn && checkOut) {
+    duration = Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 60000));
+  }
+
   const attendance = await Attendance.create({
     tenantId,
     studentId,
     date,
     checkIn: checkIn ? new Date(checkIn) : new Date(),
     checkOut: checkOut ? new Date(checkOut) : undefined,
+    durationMinutes: duration,
+    status: req.body.status || 'present',
     method: 'manual',
     notes: notes || '',
   });
 
   res.status(201).json(attendance);
+});
+
+/**
+ * Bulk mark attendance for all or selected students on a given date with specific in/out time.
+ * POST /api/attendance/bulk
+ */
+export const bulkAttendance = asyncHandler(async (req, res) => {
+  const { entries, date = getTodayDateString() } = req.body;
+  // entries: [{ studentId, status: 'present'|'absent'|'late', checkIn, checkOut }]
+  const tenantId = req.tenantId;
+
+  if (!Array.isArray(entries) || entries.length === 0) {
+    throw new ApiError(400, 'Expected non-empty entries array');
+  }
+
+  const results = [];
+  for (const item of entries) {
+    if (!item.studentId) continue;
+
+    let inTime = item.checkIn ? new Date(item.checkIn) : new Date();
+    let outTime = item.checkOut ? new Date(item.checkOut) : undefined;
+    let duration = 0;
+    if (inTime && outTime) {
+      duration = Math.max(0, Math.round((outTime.getTime() - inTime.getTime()) / 60000));
+    }
+
+    // Upsert attendance for student for this date
+    const record = await Attendance.findOneAndUpdate(
+      { tenantId, studentId: item.studentId, date },
+      {
+        $set: {
+          status: item.status || 'present',
+          checkIn: item.status === 'absent' ? undefined : inTime,
+          checkOut: item.status === 'absent' ? undefined : outTime,
+          durationMinutes: item.status === 'absent' ? 0 : duration,
+          method: 'bulk',
+          notes: item.notes || '',
+        },
+      },
+      { upsert: true, new: true }
+    );
+    results.push(record);
+  }
+
+  res.json({ message: `Attendance saved for ${results.length} students`, records: results });
+});
+
+/**
+ * Update / Check out an existing attendance log entry.
+ * PATCH /api/attendance/:id/checkout
+ */
+export const updateCheckOut = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { checkOut = new Date() } = req.body;
+  const tenantId = req.tenantId;
+
+  const attendance = await Attendance.findOne({ _id: id, tenantId });
+  if (!attendance) {
+    throw new ApiError(404, 'Attendance entry not found');
+  }
+
+  const outTime = new Date(checkOut);
+  const diffMinutes = Math.max(0, Math.round((outTime.getTime() - new Date(attendance.checkIn).getTime()) / 60000));
+
+  attendance.checkOut = outTime;
+  attendance.durationMinutes = diffMinutes;
+  await attendance.save();
+
+  res.json(attendance);
 });
 
