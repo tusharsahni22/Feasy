@@ -12,6 +12,7 @@ import {
   Heart,
   Utensils,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { AttendanceAPI } from '../api/endpoints.js';
 
@@ -247,6 +248,99 @@ export default function StudentSelfCheckIn() {
               }}
             >
               {result.action === 'checked_in' ? 'Check-In Recorded' : 'Check-Out Recorded'}
+            </div>
+
+            {/* Membership Days Remaining Card */}
+            <div
+              style={{
+                background:
+                  result.isExpired
+                    ? 'rgba(239, 68, 68, 0.12)'
+                    : (result.student?.remainingDays ?? result.remainingDays ?? 0) <= 7
+                    ? 'rgba(245, 158, 11, 0.12)'
+                    : 'rgba(16, 185, 129, 0.12)',
+                border:
+                  result.isExpired
+                    ? '1px solid rgba(239, 68, 68, 0.35)'
+                    : (result.student?.remainingDays ?? result.remainingDays ?? 0) <= 7
+                    ? '1px solid rgba(245, 158, 11, 0.35)'
+                    : '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: 14,
+                padding: '14px 16px',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 16,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: result.isExpired
+                      ? 'rgba(239, 68, 68, 0.2)'
+                      : (result.student?.remainingDays ?? result.remainingDays ?? 0) <= 7
+                      ? 'rgba(245, 158, 11, 0.2)'
+                      : 'rgba(16, 185, 129, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: result.isExpired
+                      ? '#ef4444'
+                      : (result.student?.remainingDays ?? result.remainingDays ?? 0) <= 7
+                      ? '#f59e0b'
+                      : '#10b981',
+                  }}
+                >
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Membership Validity
+                  </div>
+                  <div style={{ fontSize: 13, color: '#e5e7eb', marginTop: 2 }}>
+                    Plan: <strong>{result.student?.classPlan || 'Standard'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                {result.isExpired ? (
+                  <span
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.25)',
+                      color: '#f87171',
+                      padding: '4px 10px',
+                      borderRadius: 12,
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Expired
+                  </span>
+                ) : (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 800,
+                        color:
+                          (result.student?.remainingDays ?? result.remainingDays ?? 0) <= 7
+                            ? '#f59e0b'
+                            : '#10b981',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {result.student?.remainingDays ?? result.remainingDays ?? 0}{' '}
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>Days</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>Available on Plan</div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Time & Shift Card */}

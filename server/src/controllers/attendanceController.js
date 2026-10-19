@@ -102,13 +102,18 @@ export const scanAttendance = asyncHandler(async (req, res) => {
     ipAddress: req.ip,
   });
 
-  // Calculate subscription status alert
-  const isExpired = new Date(student.subscriptionEnd) < new Date();
+  // Calculate subscription status alert and remaining days
+  const now = new Date();
+  const subEnd = student.subscriptionEnd ? new Date(student.subscriptionEnd) : null;
+  const isExpired = subEnd ? subEnd < now : false;
+  const diffDays = subEnd ? Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const remainingDays = isExpired ? 0 : Math.max(0, diffDays);
 
   res.json({
     message: action === 'checked_in' ? `Welcome ${student.name}!` : `Goodbye ${student.name}!`,
     action,
     isExpired,
+    remainingDays,
     student: {
       _id: student._id,
       name: student.name,
@@ -117,6 +122,7 @@ export const scanAttendance = asyncHandler(async (req, res) => {
       shiftTiming: student.shiftTiming,
       classPlan: student.classPlan,
       subscriptionEnd: student.subscriptionEnd,
+      remainingDays,
       status: student.status,
     },
     attendance,
@@ -363,13 +369,18 @@ export const selfCheckIn = asyncHandler(async (req, res) => {
     action = 'checked_in';
   }
 
-  // Check subscription expiry
-  const isExpired = new Date(student.subscriptionEnd) < new Date();
+  // Check subscription expiry and calculate remaining days
+  const now = new Date();
+  const subEnd = student.subscriptionEnd ? new Date(student.subscriptionEnd) : null;
+  const isExpired = subEnd ? subEnd < now : false;
+  const diffDays = subEnd ? Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const remainingDays = isExpired ? 0 : Math.max(0, diffDays);
 
   res.json({
     message: action === 'checked_in' ? `Welcome, ${student.name}!` : `Goodbye, ${student.name}!`,
     action,
     isExpired,
+    remainingDays,
     student: {
       _id: student._id,
       name: student.name,
@@ -378,6 +389,7 @@ export const selfCheckIn = asyncHandler(async (req, res) => {
       shiftTiming: student.shiftTiming,
       classPlan: student.classPlan?.name || 'Standard',
       subscriptionEnd: student.subscriptionEnd,
+      remainingDays,
       status: student.status,
       dietPlan: student.dietPlan,
     },

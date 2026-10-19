@@ -372,7 +372,7 @@ export default function Attendance() {
                   </Badge>
                 </div>
 
-                <div className="grid grid-3" style={{ gap: 8, fontSize: 13 }}>
+                <div className="grid grid-4" style={{ gap: 8, fontSize: 13 }}>
                   <div>
                     <span style={{ color: 'var(--text-faint)' }}>Shift:</span>{' '}
                     <strong>{lastScanResult.student?.shiftTiming || 'General'}</strong>
@@ -385,16 +385,46 @@ export default function Attendance() {
                     <span style={{ color: 'var(--text-faint)' }}>Time:</span>{' '}
                     <strong>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
                   </div>
+                  <div>
+                    <span style={{ color: 'var(--text-faint)' }}>Days Available:</span>{' '}
+                    {lastScanResult.isExpired ? (
+                      <span style={{ color: 'var(--rose)', fontWeight: 700 }}>Expired</span>
+                    ) : (
+                      <strong style={{ color: (lastScanResult.student?.remainingDays ?? lastScanResult.remainingDays ?? 0) <= 7 ? 'var(--amber)' : 'var(--emerald)', fontSize: 14 }}>
+                        {lastScanResult.student?.remainingDays ?? lastScanResult.remainingDays ?? 0} days
+                      </strong>
+                    )}
+                  </div>
                 </div>
 
-                {lastScanResult.isExpired && (
+                {lastScanResult.isExpired ? (
                   <div className="callout warn" style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <AlertTriangle size={16} />
                     <span>
                       Membership expired on {formatDate(lastScanResult.student?.subscriptionEnd)}! Collect renewal.
                     </span>
                   </div>
-                )}
+                ) : (lastScanResult.student?.remainingDays ?? lastScanResult.remainingDays ?? 0) <= 7 ? (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      color: 'var(--amber)',
+                      fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <AlertTriangle size={15} />
+                    <span>
+                      Membership expiring soon ({lastScanResult.student?.remainingDays ?? lastScanResult.remainingDays} days left until {formatDate(lastScanResult.student?.subscriptionEnd)}).
+                    </span>
+                  </div>
+                ) : null}
               </div>
             )}
           </Card>
@@ -508,6 +538,7 @@ export default function Attendance() {
                   <th>Student / Member</th>
                   <th>Contact</th>
                   <th>Shift Timing</th>
+                  <th>Days Left</th>
                   <th>Check-In Time</th>
                   <th>Check-Out Time</th>
                   <th>Duration</th>
@@ -523,6 +554,13 @@ export default function Attendance() {
                   const isPresent = Boolean(log);
                   const isInside = log && !log.checkOut;
 
+                  // Compute membership days remaining
+                  const now = new Date();
+                  const subEnd = student.subscriptionEnd ? new Date(student.subscriptionEnd) : null;
+                  const isExpired = subEnd ? subEnd < now : false;
+                  const diffDays = subEnd ? Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                  const daysLeft = isExpired ? 0 : Math.max(0, diffDays);
+
                   return (
                     <tr key={student._id}>
                       <td className="cell-main">
@@ -533,6 +571,15 @@ export default function Attendance() {
                       </td>
                       <td>{student.parentPhone}</td>
                       <td>{student.shiftTiming || 'General'}</td>
+                      <td>
+                        {isExpired ? (
+                          <Badge tone="danger">Expired</Badge>
+                        ) : daysLeft <= 7 ? (
+                          <Badge tone="warn">{daysLeft}d left</Badge>
+                        ) : (
+                          <span style={{ fontWeight: 600, color: 'var(--emerald)' }}>{daysLeft}d</span>
+                        )}
+                      </td>
                       <td>
                         {log?.checkIn ? (
                           <span style={{ color: 'var(--emerald)', fontWeight: 600 }}>
