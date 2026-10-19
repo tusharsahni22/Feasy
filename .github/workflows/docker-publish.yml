@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Build and Push
+name: CI/CD Pipeline - Build, Push and Deploy
 
 on:
   push:
@@ -76,3 +76,38 @@ jobs:
           push: true
           tags: |
             tusharsahni22/feasy:${{ env.TAG }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: ${{ secrets.EC2_HOST != '' }}
+    steps:
+      - name: Determine Docker Tag
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "TAG=latest" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then
+            echo "TAG=qa" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "TAG=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            mkdir -p ~/feasy && cd ~/feasy
+            
+            # Download the latest docker-compose.prod.yml directly from GitHub
+            curl -fsSL https://raw.githubusercontent.com/tusharsahni22/Feasy/${{ github.ref_name }}/docker-compose.prod.yml -o docker-compose.yml
+
+            # Pull the newly pushed image and restart the container
+            export DOCKER_IMAGE=tusharsahni22/feasy:${{ env.TAG }}
+            docker compose pull
+            docker compose up -d --remove-orphans
+
+            # Clean up old dangling images to preserve disk space on EC2
+            docker image prune -f
