@@ -1,23 +1,43 @@
+version: '3.8'
+
 services:
-  app:
-    image: ${DOCKER_IMAGE:-tusharsahni22/feasy:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL:-}
-    container_name: feasy-app
+  # 1. Production Environment (Connect Cloudflare Tunnel to http://localhost:8080)
+  feasy-prod:
+    image: tusharsahni22/feasy:latest
+    container_name: feasy-prod
     restart: unless-stopped
-    ports:
-      - "80:5000"
-    env_file:
-      - ${ENV_FILE:-.env}
     environment:
-      - PORT=5000
-      - NODE_ENV=${NODE_ENV:-production}
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
+      - PORT=8080
+    ports:
+      - "8080:8080"
+
+  # 2. QA Environment (Connect Cloudflare Tunnel to http://localhost:8081)
+  feasy-qa:
+    image: tusharsahni22/feasy:qa
+    container_name: feasy-qa
+    restart: unless-stopped
+    environment:
+      - PORT=8081
+    ports:
+      - "8081:8081"
+
+  # 3. Dev Environment (Connect Cloudflare Tunnel to http://localhost:8082)
+  feasy-dev:
+    image: tusharsahni22/feasy:dev
+    container_name: feasy-dev
+    restart: unless-stopped
+    environment:
+      - PORT=8082
+    ports:
+      - "8082:8082"
+
+  # 4. Watchtower (The Automatic CD Deployer - polls Docker Hub every 60s and auto-deploys)
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.40
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 --cleanup
