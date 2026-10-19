@@ -42,25 +42,19 @@ docker compose version
 
 ---
 
-## 3. Option A: Pull & Run Directly from Docker Hub (Zero Code on EC2)
-You don't even need to clone the entire repo or build anything on EC2. You only need the `docker-compose.prod.yml` and `.env` file!
+## 3. Option A: Pull & Run Directly from Docker Hub (Zero Local Code, Zero Local .env)
+Because the CI/CD pipeline builds the environment variables directly from **GitHub Secrets** into the image, **you do not need any local `.env` file on your EC2 instance!**
 
-1. Create a project directory on your EC2 instance:
+1. Create a directory on EC2:
    ```bash
    mkdir feasy && cd feasy
    ```
-2. Download the compose file:
+2. Download `docker-compose.prod.yml`:
    ```bash
-   curl -O https://raw.githubusercontent.com/<YOUR_GITHUB_USER>/feasy/main/docker-compose.prod.yml
+   curl -O https://raw.githubusercontent.com/<YOUR_GITHUB_USER>/feasy/master/docker-compose.prod.yml
    mv docker-compose.prod.yml docker-compose.yml
    ```
-3. Create your `.env` file with production secrets:
-   ```bash
-   nano .env
-   ```
-   *(Paste your MongoDB Atlas URI, JWT Secret, and specify `DOCKER_IMAGE=<your-dockerhub-username>/feasy:latest`)*
-
-4. Pull and run immediately:
+3. Pull and run immediately:
    ```bash
    docker compose pull
    docker compose up -d

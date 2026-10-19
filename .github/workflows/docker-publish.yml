@@ -3,7 +3,7 @@ name: CI/CD Pipeline - Build and Push
 on:
   push:
     branches:
-      - main
+      - master
       - qa
       - dev
 
@@ -17,7 +17,7 @@ jobs:
       - name: Determine Docker Tag and Target Environment
         id: determine_tag
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             echo "TAG=latest" >> $GITHUB_ENV
             echo "ENV_NAME=prod" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then

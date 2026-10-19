@@ -33,6 +33,9 @@ RUN cd server && npm ci --only=production
 # Copy server code
 COPY server/ ./server/
 
+# Copy generated .env file from CI/CD pipeline if present
+COPY .env* ./server/
+
 # Copy compiled static frontend from client-builder stage
 COPY --from=client-builder /app/client/dist ./client/dist
 
