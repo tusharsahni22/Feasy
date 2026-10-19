@@ -7,12 +7,6 @@ import {
   MessageSquare,
   CheckCircle2,
   XCircle,
-  Building2,
-  Briefcase,
-  GraduationCap,
-  Dumbbell,
-  BookOpen,
-  Layers,
 } from 'lucide-react';
 import { SettingsAPI } from '../api/endpoints.js';
 import { useSettings } from '../context/SettingsContext.jsx';
@@ -21,7 +15,7 @@ import Button from '../components/ui/Button.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import Field from '../components/ui/Field.jsx';
 import { CURRENCY_OPTIONS } from '../lib/constants.js';
-import { BUSINESS_TYPES, getPreset } from '../lib/presets.js';
+import { getPreset } from '../lib/presets.js';
 
 const TOKENS = [
   'contactPerson',
@@ -38,12 +32,7 @@ const TOKENS = [
   'institute',
 ];
 
-const ICONS = {
-  GraduationCap,
-  Dumbbell,
-  BookOpen,
-  Layers,
-};
+
 
 function ChannelRow({ icon: Icon, label, configured, detail }) {
   return (
@@ -117,16 +106,6 @@ export default function Settings() {
       customLabels: { ...f.customLabels, [labelKey]: e.target.value },
     }));
 
-  function handleBusinessTypeChange(newType) {
-    const preset = getPreset(newType);
-    setForm((f) => ({
-      ...f,
-      businessType: newType,
-      customLabels: {}, // reset custom overrides when switching preset
-      reminderTemplate: preset.defaultTemplate || f.reminderTemplate,
-    }));
-  }
-
   async function save() {
     if (!form.instituteName.trim()) return toast.error('Organization / Business name is required');
     setSaving(true);
@@ -166,48 +145,6 @@ export default function Settings() {
 
       <div className="grid dash-cols">
         <div className="stack">
-          {/* Business Mode Selector */}
-          <Card
-            title="Business Model &amp; Niche Preset"
-            subtitle="Adapts terminology across your dashboard, records, and reminder messages"
-          >
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 16 }}>
-              {BUSINESS_TYPES.map((bt) => {
-                const IconComponent = ICONS[bt.icon] || Briefcase;
-                const active = form.businessType === bt.id;
-                return (
-                  <button
-                    key={bt.id}
-                    type="button"
-                    onClick={() => handleBusinessTypeChange(bt.id)}
-                    style={{
-                      textAlign: 'left',
-                      padding: '14px 16px',
-                      borderRadius: 'var(--radius)',
-                      border: active ? '2px solid var(--saffron)' : '1px solid var(--border)',
-                      background: active ? 'var(--saffron-soft)' : 'var(--surface-2)',
-                      color: 'var(--text)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <div className="hstack" style={{ gap: 10, marginBottom: 6 }}>
-                      <span className="stat-icon" style={{ '--tone': 'var(--saffron)', '--tone-soft': 'transparent' }}>
-                        <IconComponent size={20} />
-                      </span>
-                      <strong style={{ fontSize: 14 }}>{bt.labels.businessType}</strong>
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.4 }}>
-                      {bt.labels.memberPlural} · {bt.labels.categoryPlural} · {bt.labels.itemPlural}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--text-dim)', background: 'var(--surface-3)', padding: '10px 14px', borderRadius: 'var(--radius-sm)' }}>
-              Currently adapting UI for: <strong>{currentPreset.name}</strong> ({currentPreset.labels.memberSingular}s &amp; {currentPreset.labels.subscriptionLabel}s)
-            </div>
-          </Card>
 
           {/* Organization & Details */}
           <Card title="Organization Branding">
