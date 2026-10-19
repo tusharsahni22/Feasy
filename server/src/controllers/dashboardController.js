@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Student from '../models/Student.js';
 import Payment from '../models/Payment.js';
 import ClassPlan from '../models/ClassPlan.js';
+import Attendance from '../models/Attendance.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { decorateStudent } from '../utils/decorate.js';
 import { subscriptionStatus } from '../utils/subscription.js';
@@ -83,6 +84,23 @@ export const getSummary = asyncHandler(async (req, res) => {
     else subActive += 1;
   }
 
+  // Attendance Analytics (Daily, Weekly, Monthly)
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  
+  // 7 days ago string
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgoStr = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(sevenDaysAgo.getDate()).padStart(2, '0')}`;
+
+  // Start of this month string
+  const monthStartStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+  const [dailyAtt, weeklyAtt, monthlyAtt, insideNow] = await Promise.all([
+    Attendance.countDocuments({ tenantId, date: todayStr }),
+    Attendance.countDocuments({ tenantId, date: { $gte: sevenDaysAgoStr, $lte: todayStr } }),
+    Attendance.countDocuments({ tenantId, date: { $gte: monthStartStr, $lte: todayStr } }),
+    Attendance.countDocuments({ tenantId, date: todayStr, checkOut: { $exists: false } }),
+  ]);
+
   res.json({
     institute: settings.instituteName,
     currency: settings.currency,
@@ -110,6 +128,12 @@ export const getSummary = asyncHandler(async (req, res) => {
       active: subActive,
       expiring: subExpiring,
       expired: subExpired,
+    },
+    attendance: {
+      daily: dailyAtt,
+      weekly: weeklyAtt,
+      monthly: monthlyAtt,
+      insideNow,
     },
   });
 });
@@ -152,6 +176,22 @@ export const getCharts = asyncHandler(async (req, res) => {
     breakdown[status === 'unknown' ? 'active' : status] += 1;
   }
 
+  // Attendance Trend (Last 7 Days)
+  const last7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    last7Days.push({ date: dateStr, label: dayLabel });
+  }
+
+  const attendanceTrend = await Promise.all(
+    last7Days.map(async (day) => {
+      const count = await Attendance.countDocuments({ tenantId, date: day.date });
+      return { date: day.date, day: day.label, count };
+    })
+  );
+
   res.json({
     monthlyCollection,
     studentsByClass,
@@ -160,6 +200,7 @@ export const getCharts = asyncHandler(async (req, res) => {
       { name: 'Expiring', value: breakdown.expiring, key: 'expiring' },
       { name: 'Expired', value: breakdown.expired, key: 'expired' },
     ],
+    attendanceTrend,
   });
 });
 
