@@ -3,24 +3,36 @@ import jwt from 'jsonwebtoken';
 import Tenant from '../models/Tenant.js';
 import User from '../models/User.js';
 import Settings from '../models/Settings.js';
+import ClassPlan from '../models/ClassPlan.js';
+import Subject from '../models/Subject.js';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 function signToken(user) {
   return jwt.sign(
-    { userId: user._id, tenantId: user.tenantId, role: user.role },
+    { userId: user._id, tenantId: user.tenantId, role: user.role, isSuperAdmin: user.isSuperAdmin },
     env.jwtSecret,
     { expiresIn: '30d' }
   );
 }
 
 // POST /api/auth/register
+// Restricted: Only existing workspace owners or superadmins can create new workspaces/tenants.
 export const register = asyncHandler(async (req, res) => {
   const { orgName, slug, name, email, password, phone, businessType } = req.body;
 
   if (!orgName || !name || !email || !password) {
     throw new ApiError(400, 'Organization name, user name, email, and password are required');
+  }
+
+  // Check if self-registration is locked down:
+  // If at least one user exists, only an authenticated SuperAdmin or Owner can create workspaces
+  const userCount = await User.countDocuments();
+  if (userCount > 0) {
+    if (!req.user || (!req.user.isSuperAdmin && req.user.role !== 'owner')) {
+      throw new ApiError(403, 'Public registration is disabled. Only platform administrators can provision new workspaces.');
+    }
   }
 
   const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -56,7 +68,77 @@ export const register = asyncHandler(async (req, res) => {
     phone: phone ? phone.trim() : '',
     tenantId: tenant._id,
     role: 'owner',
+    isSuperAdmin: userCount === 0, // First ever user becomes superadmin
   });
+
+  // Automatically seed default starter tiers / plans & add-ons for the new workspace
+  try {
+    const bType = tenant.businessType || 'gym';
+    let defaultTiers = [];
+    let defaultAddons = [];
+
+    if (bType === 'gym') {
+      defaultTiers = [
+        { name: 'Standard Gym Pass', order: 1, baseMonthlyFee: 1500 },
+        { name: 'Strength & Cardio Tier', order: 2, baseMonthlyFee: 2200 },
+        { name: 'VIP All-Access Pass', order: 3, baseMonthlyFee: 3500 },
+      ];
+      defaultAddons = [
+        { name: 'Personal Trainer 1-on-1', code: 'PT-101', addOnFee: 2000 },
+        { name: 'Steam / Sauna Access', code: 'SPA', addOnFee: 500 },
+        { name: 'Dedicated Locker', code: 'LCK', addOnFee: 300 },
+      ];
+    } else if (bType === 'library') {
+      defaultTiers = [
+        { name: 'Standard Reading Hall', order: 1, baseMonthlyFee: 800 },
+        { name: 'Reserved Cabin Desk', order: 2, baseMonthlyFee: 1500 },
+        { name: '24/7 Night Owl Seat', order: 3, baseMonthlyFee: 2000 },
+      ];
+      defaultAddons = [
+        { name: 'Personal Locker', code: 'LCK', addOnFee: 250 },
+        { name: 'High-Speed Wi-Fi Boost', code: 'WIFI', addOnFee: 200 },
+      ];
+    } else if (bType === 'general') {
+      defaultTiers = [
+        { name: 'Basic Tier', order: 1, baseMonthlyFee: 1000 },
+        { name: 'Pro Tier', order: 2, baseMonthlyFee: 2500 },
+        { name: 'Enterprise Tier', order: 3, baseMonthlyFee: 5000 },
+      ];
+      defaultAddons = [
+        { name: 'Priority Support', code: 'SUP', addOnFee: 500 },
+        { name: 'Extra Storage / Add-on', code: 'STR', addOnFee: 300 },
+      ];
+    } else {
+      // education
+      defaultTiers = [
+        { name: 'Class 8', order: 8, baseMonthlyFee: 1000 },
+        { name: 'Class 9', order: 9, baseMonthlyFee: 1200 },
+        { name: 'Class 10', order: 10, baseMonthlyFee: 1500 },
+      ];
+      defaultAddons = [
+        { name: 'Mathematics', code: 'MATH', addOnFee: 300 },
+        { name: 'Science', code: 'SCI', addOnFee: 300 },
+      ];
+    }
+
+    const createdTiers = await ClassPlan.insertMany(
+      defaultTiers.map((t) => ({ ...t, tenantId: tenant._id }))
+    );
+
+    if (createdTiers.length > 0 && defaultAddons.length > 0) {
+      const primaryTier = createdTiers[0]._id;
+      await Subject.insertMany(
+        defaultAddons.map((s) => ({
+          ...s,
+          tenantId: tenant._id,
+          classPlan: primaryTier,
+          active: true,
+        }))
+      );
+    }
+  } catch (seedErr) {
+    console.warn('Failed to seed default starter plans for tenant:', seedErr.message);
+  }
 
   const token = signToken(user);
 
@@ -67,6 +149,7 @@ export const register = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
     },
     tenant: {
       id: tenant._id,
@@ -112,6 +195,7 @@ export const login = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
     },
     tenant: {
       id: user.tenantId._id,
@@ -132,6 +216,7 @@ export const getMe = asyncHandler(async (req, res) => {
       email: req.user.email,
       role: req.user.role,
       phone: req.user.phone,
+      isSuperAdmin: Boolean(req.user.isSuperAdmin),
     },
     tenant: {
       id: req.tenant._id,
@@ -144,3 +229,4 @@ export const getMe = asyncHandler(async (req, res) => {
     },
   });
 });
+

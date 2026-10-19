@@ -50,3 +50,20 @@ export const AuthAPI = {
   register: (data) => api.post('/auth/register', data).then((r) => r.data),
   me: () => api.get('/auth/me').then((r) => r.data),
 };
+
+export const WorkspacesAPI = {
+  list: () => api.get('/workspaces').then((r) => r.data),
+  create: (data) => api.post('/auth/register', data).then((r) => r.data),
+  remove: (id) => api.delete(`/workspaces/${id}`).then((r) => r.data),
+};
+
+export const UsersAPI = {
+  list: () => api.get('/users').then((r) => r.data),
+  create: (data) => api.post('/users', data).then((r) => r.data),
+  update: (id, data) => api.put(`/users/${id}`, data).then((r) => r.data),
+  remove: (id) => api.delete(`/users/${id}`).then((r) => r.data),
+};
+
+export const AuditLogsAPI = {
+  list: (params) => api.get('/audit-logs', { params }).then((r) => r.data),
+};

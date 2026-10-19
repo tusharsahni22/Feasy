@@ -14,7 +14,7 @@ function byClassThenName(a, b) {
 
 // GET /api/subjects  (optional ?classPlan=<id>&active=true)
 export const listSubjects = asyncHandler(async (req, res) => {
-  const filter = {};
+  const filter = { tenantId: req.tenantId };
   if (req.query.classPlan) filter.classPlan = req.query.classPlan;
   if (req.query.active !== undefined) filter.active = req.query.active === 'true';
 
@@ -31,13 +31,14 @@ export const createSubject = asyncHandler(async (req, res) => {
   if (!name || !name.trim()) throw new ApiError(400, 'Subject name is required');
   if (!classPlan) throw new ApiError(400, 'Please choose the class this subject belongs to');
 
-  const cls = await ClassPlan.findById(classPlan);
+  const cls = await ClassPlan.findOne({ _id: classPlan, tenantId: req.tenantId });
   if (!cls) throw new ApiError(400, 'A valid class is required');
 
-  const exists = await Subject.findOne({ classPlan, name: name.trim() });
+  const exists = await Subject.findOne({ tenantId: req.tenantId, classPlan, name: name.trim() });
   if (exists) throw new ApiError(409, `“${name.trim()}” already exists for ${cls.name}`);
 
   const created = await Subject.create({
+    tenantId: req.tenantId,
     name: name.trim(),
     code,
     classPlan,
@@ -54,7 +55,7 @@ export const createSubject = asyncHandler(async (req, res) => {
 // PUT /api/subjects/:id
 export const updateSubject = asyncHandler(async (req, res) => {
   if (req.body.classPlan) {
-    const cls = await ClassPlan.findById(req.body.classPlan);
+    const cls = await ClassPlan.findOne({ _id: req.body.classPlan, tenantId: req.tenantId });
     if (!cls) throw new ApiError(400, 'A valid class is required');
   }
 
@@ -66,10 +67,11 @@ export const updateSubject = asyncHandler(async (req, res) => {
     ...(req.body.active !== undefined && { active: req.body.active }),
   };
 
-  const updated = await Subject.findByIdAndUpdate(req.params.id, patch, {
-    new: true,
-    runValidators: true,
-  })
+  const updated = await Subject.findOneAndUpdate(
+    { _id: req.params.id, tenantId: req.tenantId },
+    patch,
+    { new: true, runValidators: true }
+  )
     .populate('classPlan', 'name order')
     .lean();
   if (!updated) throw new ApiError(404, 'Subject not found');
@@ -78,14 +80,20 @@ export const updateSubject = asyncHandler(async (req, res) => {
 
 // DELETE /api/subjects/:id
 export const deleteSubject = asyncHandler(async (req, res) => {
-  const inUse = await Student.countDocuments({ subjects: req.params.id });
+  const inUse = await Student.countDocuments({
+    tenantId: req.tenantId,
+    subjects: req.params.id,
+  });
   if (inUse > 0) {
     throw new ApiError(
       409,
       `Cannot delete: ${inUse} student(s) are enrolled in this subject`
     );
   }
-  const deleted = await Subject.findByIdAndDelete(req.params.id);
+  const deleted = await Subject.findOneAndDelete({
+    _id: req.params.id,
+    tenantId: req.tenantId,
+  });
   if (!deleted) throw new ApiError(404, 'Subject not found');
   res.json({ message: 'Subject deleted' });
 });

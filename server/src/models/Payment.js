@@ -3,6 +3,12 @@ import mongoose from 'mongoose';
 /** A fee payment/deposit recorded against a student. */
 const paymentSchema = new mongoose.Schema(
   {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Student',

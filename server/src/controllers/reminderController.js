@@ -28,11 +28,11 @@ export const sendReminders = asyncHandler(async (req, res) => {
     throw new ApiError(400, `channel must be one of: ${CHANNELS.join(', ')}`);
   }
 
-  const settings = await getSettings();
+  const settings = await getSettings(req.tenantId);
   const tmpl = template || settings.reminderTemplate;
   const symbol = currencySymbol(settings.currency);
 
-  const students = await Student.find({ _id: { $in: studentIds } })
+  const students = await Student.find({ _id: { $in: studentIds }, tenantId: req.tenantId })
     .populate('classPlan')
     .lean();
 
@@ -58,6 +58,7 @@ export const sendReminders = asyncHandler(async (req, res) => {
     }
 
     const log = await ReminderLog.create({
+      tenantId: req.tenantId,
       student: s._id,
       channel,
       to: outcome.to || s.parentPhone,
@@ -90,7 +91,7 @@ export const sendReminders = asyncHandler(async (req, res) => {
 
 // GET /api/reminders?limit=
 export const listReminders = asyncHandler(async (req, res) => {
-  const logs = await ReminderLog.find()
+  const logs = await ReminderLog.find({ tenantId: req.tenantId })
     .populate({
       path: 'student',
       select: 'name parentName classPlan',

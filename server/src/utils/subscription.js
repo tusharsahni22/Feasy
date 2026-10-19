@@ -34,14 +34,15 @@ export function computeEndDate(startDate, plan) {
 }
 
 /**
- * Whole days remaining until `endDate` (inclusive of the end day).
- * Negative when the subscription has already expired.
+ * Whole days remaining until `endDate` (calendar days between today and end date).
+ * 0 = expires today, negative = expired.
  */
 export function remainingDays(endDate, from = new Date()) {
   if (!endDate) return null;
-  const end = new Date(endDate);
-  end.setHours(23, 59, 59, 999);
-  return Math.ceil((end.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+  const target = new Date(endDate);
+  const fromMidnight = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  return Math.round((targetMidnight.getTime() - fromMidnight.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /** Bucket a subscription into active / expiring / expired. */

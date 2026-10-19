@@ -8,13 +8,16 @@ import {
   CheckCircle2,
   XCircle,
   Building2,
+  Trash2,
 } from 'lucide-react';
-import { SettingsAPI } from '../api/endpoints.js';
+import { SettingsAPI, WorkspacesAPI } from '../api/endpoints.js';
 import { useSettings } from '../context/SettingsContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import Field from '../components/ui/Field.jsx';
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import { CURRENCY_OPTIONS } from '../lib/constants.js';
 import { getPreset } from '../lib/presets.js';
 
@@ -79,6 +82,7 @@ function ChannelRow({ icon: Icon, label, configured, detail }) {
 
 export default function Settings() {
   const { settings, refresh, labels } = useSettings();
+  const { user, tenant, logout } = useAuth();
   const [form, setForm] = useState({
     instituteName: '',
     businessType: 'education',
@@ -88,6 +92,8 @@ export default function Settings() {
     reminderTemplate: '',
   });
   const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingWorkspace, setDeletingWorkspace] = useState(false);
 
   useEffect(() => {
     setForm({
@@ -330,8 +336,54 @@ export default function Settings() {
               When a messaging channel is not configured, reminders are <b>simulated</b> and logged safely in history — perfect for demos and client testing.
             </span>
           </div>
+
+          {/* Danger Zone: Workspace Deletion */}
+          {(user?.role === 'owner' || user?.isSuperAdmin) && (
+            <Card
+              title="Danger Zone"
+              subtitle="Irreversible workspace actions"
+              style={{ marginTop: 24, borderColor: 'rgba(255, 107, 107, 0.3)' }}
+            >
+              <div className="stack" style={{ gap: 12 }}>
+                <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>
+                  Permanently delete this entire workspace, including all registered members, fee tiers, payments ledger, and accounts.
+                </div>
+                <Button
+                  variant="danger"
+                  icon={Trash2}
+                  onClick={() => setShowDeleteModal(true)}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  Delete this Workspace
+                </Button>
+              </div>
+            </Card>
+          )}
         </Card>
       </div>
+
+      {showDeleteModal && (
+        <ConfirmDialog
+          title={`Permanently delete workspace "${settings.instituteName}"?`}
+          message="This action CANNOT be undone. All members, payment histories, fee tiers, and user logins will be permanently deleted from the database."
+          confirmLabel="Yes, Delete Entire Workspace"
+          busy={deletingWorkspace}
+          onConfirm={async () => {
+            setDeletingWorkspace(true);
+            try {
+              if (!tenant?._id) throw new Error('Tenant ID not found');
+              await WorkspacesAPI.remove(tenant._id);
+              toast.success('Workspace permanently deleted');
+              logout();
+            } catch (err) {
+              toast.error(err.message || 'Failed to delete workspace');
+              setDeletingWorkspace(false);
+              setShowDeleteModal(false);
+            }
+          }}
+          onClose={() => !deletingWorkspace && setShowDeleteModal(false)}
+        />
+      )}
     </>
   );
 }

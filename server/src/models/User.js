@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
       enum: ['owner', 'admin', 'accountant', 'staff', 'readonly'],
       default: 'staff',
     },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
       enum: ['active', 'inactive'],
@@ -32,3 +36,4 @@ userSchema.methods.comparePassword = async function (plain) {
 };
 
 export default mongoose.model('User', userSchema);
+

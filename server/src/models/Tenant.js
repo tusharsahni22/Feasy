@@ -18,6 +18,8 @@ const tenantSchema = new mongoose.Schema(
       contactPhone: { type: String, default: '' },
       address: { type: String, default: '' },
     },
+    reminderTemplate: { type: String, default: '' },
+    reminderLeadDays: { type: Number, default: 7, min: 1 },
     status: {
       type: String,
       enum: ['active', 'suspended', 'trial'],
@@ -28,3 +30,4 @@ const tenantSchema = new mongoose.Schema(
 );
 
 export default mongoose.model('Tenant', tenantSchema);
+

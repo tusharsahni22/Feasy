@@ -139,19 +139,10 @@ export default function Login() {
             color: 'var(--text-dim)',
           }}
         >
-          Want to start a new institute or gym workspace?{' '}
-          <Link
-            to="/register"
-            style={{
-              color: 'var(--saffron)',
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            Create account
-          </Link>
+          Feasy Workspaces are invite-only and provisioned by the platform administrator.
         </div>
       </div>
     </div>
   );
 }
+

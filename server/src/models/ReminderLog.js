@@ -3,6 +3,12 @@ import mongoose from 'mongoose';
 /** An audit record of every reminder we attempted to send to a parent. */
 const reminderLogSchema = new mongoose.Schema(
   {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Student',

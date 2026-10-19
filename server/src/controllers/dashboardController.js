@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Student from '../models/Student.js';
 import Payment from '../models/Payment.js';
 import ClassPlan from '../models/ClassPlan.js';
@@ -13,9 +14,13 @@ import {
 } from '../utils/dates.js';
 import { getSettings } from '../services/settingsService.js';
 
-async function sumPayments(match) {
+async function sumPayments(tenantId, match) {
+  const query = { ...match };
+  if (tenantId) {
+    query.tenantId = new mongoose.Types.ObjectId(String(tenantId));
+  }
   const [agg] = await Payment.aggregate([
-    { $match: match },
+    { $match: query },
     { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
   ]);
   return { total: agg?.total || 0, count: agg?.count || 0 };
@@ -23,27 +28,35 @@ async function sumPayments(match) {
 
 // GET /api/dashboard/summary
 export const getSummary = asyncHandler(async (req, res) => {
-  const settings = await getSettings();
+  const tenantId = req.tenantId;
+  const settings = await getSettings(tenantId);
   const leadDays = settings.reminderLeadDays;
   const now = new Date();
 
-  const students = await Student.find().lean();
+  const students = await Student.find({ tenantId }).lean();
   const active = students.filter((s) => s.status === 'active');
 
   const expectedMonthly = active.reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
   const expectedAnnual = expectedMonthly * 12;
 
-  const month = await sumPayments({
+  const month = await sumPayments(tenantId, {
     paidAt: { $gte: startOfMonth(now), $lte: endOfMonth(now) },
   });
-  const year = await sumPayments({
+  const year = await sumPayments(tenantId, {
     paidAt: { $gte: startOfYear(now), $lte: endOfYear(now) },
   });
-  const allTime = await sumPayments({});
+  const allTime = await sumPayments(tenantId, {});
 
   // Per-student dues for the current month
+  const matchDues = {
+    paidAt: { $gte: startOfMonth(now), $lte: endOfMonth(now) },
+  };
+  if (tenantId) {
+    matchDues.tenantId = new mongoose.Types.ObjectId(String(tenantId));
+  }
+
   const paidThisMonth = await Payment.aggregate([
-    { $match: { paidAt: { $gte: startOfMonth(now), $lte: endOfMonth(now) } } },
+    { $match: matchDues },
     { $group: { _id: '$student', paid: { $sum: '$amount' } } },
   ]);
   const paidMap = new Map(paidThisMonth.map((p) => [String(p._id), p.paid]));
@@ -103,25 +116,29 @@ export const getSummary = asyncHandler(async (req, res) => {
 
 // GET /api/dashboard/charts
 export const getCharts = asyncHandler(async (req, res) => {
-  const settings = await getSettings();
+  const tenantId = req.tenantId;
+  const settings = await getSettings(tenantId);
   const leadDays = settings.reminderLeadDays;
   const now = new Date();
 
-  // Monthly collection trend (last 6 months) — one query per month keeps this
-  // correct with respect to local-time month boundaries.
+  // Monthly collection trend (last 6 months)
   const months = lastMonths(6, now);
   const monthlyCollection = await Promise.all(
     months.map(async (m) => {
-      const { total } = await sumPayments({ paidAt: { $gte: m.start, $lte: m.end } });
+      const { total } = await sumPayments(tenantId, { paidAt: { $gte: m.start, $lte: m.end } });
       return { label: m.label, month: m.key, total };
     })
   );
 
   // Students per class
+  const classMatch = tenantId ? { tenantId: new mongoose.Types.ObjectId(String(tenantId)) } : {};
   const [byClass, classes, students] = await Promise.all([
-    Student.aggregate([{ $group: { _id: '$classPlan', count: { $sum: 1 } } }]),
-    ClassPlan.find().sort({ order: 1 }).lean(),
-    Student.find().select('subscriptionEnd status monthlyFee').lean(),
+    Student.aggregate([
+      { $match: classMatch },
+      { $group: { _id: '$classPlan', count: { $sum: 1 } } },
+    ]),
+    ClassPlan.find({ tenantId }).sort({ order: 1 }).lean(),
+    Student.find({ tenantId }).select('subscriptionEnd status monthlyFee').lean(),
   ]);
   const countMap = new Map(byClass.map((b) => [String(b._id), b.count]));
   const studentsByClass = classes
@@ -148,12 +165,13 @@ export const getCharts = asyncHandler(async (req, res) => {
 
 // GET /api/dashboard/expiring?within=&limit=
 export const getExpiring = asyncHandler(async (req, res) => {
-  const settings = await getSettings();
+  const tenantId = req.tenantId;
+  const settings = await getSettings(tenantId);
   const leadDays = settings.reminderLeadDays;
   const within = req.query.within !== undefined ? Number(req.query.within) : null;
   const limit = Number(req.query.limit) || 100;
 
-  const students = await Student.find({ status: 'active' })
+  const students = await Student.find({ tenantId, status: 'active' })
     .populate('classPlan')
     .populate('subjects')
     .lean();

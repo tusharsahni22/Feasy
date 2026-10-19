@@ -8,11 +8,15 @@ import mongoose from 'mongoose';
  */
 const subjectSchema = new mongoose.Schema(
   {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     name: { type: String, required: true, trim: true },
     code: { type: String, trim: true, uppercase: true },
-    // The class this subject belongs to. Kept flexible (not strictly required
-    // at the schema level) so subjects created before class-scoping still load;
-    // the API requires it on create so all new subjects are class-scoped.
+    // The class this subject belongs to.
     classPlan: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ClassPlan',

@@ -7,11 +7,18 @@ import {
   BellRing,
   Settings as SettingsIcon,
   CreditCard,
+  Building2,
+  UserCheck,
+  History,
 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function Sidebar({ open }) {
   const { settings, labels } = useSettings();
+  const { user } = useAuth();
+
+  const isOwnerOrAdmin = user?.isSuperAdmin || user?.role === 'owner' || user?.role === 'admin';
 
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -19,6 +26,13 @@ export default function Sidebar({ open }) {
     { to: '/fees', label: labels.plansPageTitle || 'Plans & Add-ons', icon: Layers },
     { to: '/payments', label: 'Payments', icon: Wallet },
     { to: '/reminders', label: 'Reminders', icon: BellRing },
+    ...(isOwnerOrAdmin
+      ? [
+          { to: '/team', label: 'Team', icon: UserCheck },
+          { to: '/audit-logs', label: 'Activity Log', icon: History },
+          { to: '/workspaces', label: 'Workspaces', icon: Building2 },
+        ]
+      : []),
     { to: '/settings', label: 'Settings', icon: SettingsIcon },
   ];
 

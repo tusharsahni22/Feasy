@@ -38,6 +38,30 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * Optional Auth: Parses token if present, does not fail if absent.
+ */
+export const optionalAuth = asyncHandler(async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, env.jwtSecret);
+    const user = await User.findById(decoded.userId).populate('tenantId');
+    if (user && user.status === 'active') {
+      req.user = user;
+      req.tenant = user.tenantId;
+      req.tenantId = user.tenantId?._id;
+    }
+  } catch {
+    // Ignore invalid tokens for optional auth
+  }
+  next();
+});
+
+/**
  * Enforce Role-Based Access Control (RBAC).
  * Example: requireRoles(['owner', 'admin'])
  */
@@ -52,3 +76,17 @@ export const requireRoles = (roles = []) => {
     next();
   };
 };
+
+/**
+ * Enforce platform superadmin / owner access.
+ */
+export const requireSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    throw new ApiError(401, 'Authentication required');
+  }
+  if (!req.user.isSuperAdmin) {
+    throw new ApiError(403, 'Platform Super Admin access required');
+  }
+  next();
+};
+

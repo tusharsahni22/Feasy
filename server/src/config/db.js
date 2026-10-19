@@ -24,12 +24,12 @@ export async function connectDB(uri = env.mongoUri) {
   try {
     conn = await mongoose.connect(uri, {
       autoIndex: env.mongoAutoIndex,
-      serverSelectionTimeoutMS: 3000,
+      serverSelectionTimeoutMS: 15000,
     });
     console.log(`✔ MongoDB connected → ${conn.connection.host}/${conn.connection.name}`);
     return conn;
   } catch (err) {
-    if (env.nodeEnv !== 'production') {
+    if (env.nodeEnv !== 'production' && !uri.includes('mongodb+srv')) {
       console.warn(`\n⚠ Could not connect to external MongoDB at ${uri} (${err.message})`);
       console.log('⚡ Launching embedded in-memory MongoDB instance for local dev…');
       const { MongoMemoryServer } = await import('mongodb-memory-server');

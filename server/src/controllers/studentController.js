@@ -9,6 +9,7 @@ import { computeFees } from '../utils/fees.js';
 import { computeEndDate } from '../utils/subscription.js';
 import { decorateStudent } from '../utils/decorate.js';
 import { getSettings } from '../services/settingsService.js';
+import { logAudit } from '../services/auditService.js';
 
 /** Resolve class + subjects, then compute the fee snapshot and subscription window. */
 async function buildFeeAndSubscription(body, existing = null) {
@@ -43,7 +44,7 @@ export const listStudents = asyncHandler(async (req, res) => {
   const { q, classPlan, status, sort } = req.query;
   const { reminderLeadDays } = await getSettings();
 
-  const filter = {};
+  const filter = { tenantId: req.tenantId };
   if (classPlan) filter.classPlan = classPlan;
   if (status) filter.status = status;
   if (q) {
@@ -72,11 +73,11 @@ export const listStudents = asyncHandler(async (req, res) => {
 // GET /api/students/:id
 export const getStudent = asyncHandler(async (req, res) => {
   const { reminderLeadDays } = await getSettings();
-  const student = await Student.findById(req.params.id)
+  const student = await Student.findOne({ _id: req.params.id, tenantId: req.tenantId })
     .populate('classPlan')
     .populate('subjects')
     .lean();
-  if (!student) throw new ApiError(404, 'Student not found');
+  if (!student) throw new ApiError(404, 'Member not found in your workspace');
   res.json(decorateStudent(student, reminderLeadDays));
 });
 
@@ -84,12 +85,13 @@ export const getStudent = asyncHandler(async (req, res) => {
 export const createStudent = asyncHandler(async (req, res) => {
   const { name, parentName, parentPhone } = req.body;
   if (!name || !parentName || !parentPhone) {
-    throw new ApiError(400, 'Name, parent name and parent phone are required');
+    throw new ApiError(400, 'Name, parent/contact name and phone are required');
   }
 
   const { fees, plan, start, end, subjectIds } = await buildFeeAndSubscription(req.body);
 
   const created = await Student.create({
+    tenantId: req.tenantId,
     name,
     parentName,
     parentPhone,
@@ -106,7 +108,17 @@ export const createStudent = asyncHandler(async (req, res) => {
     notes: req.body.notes,
   });
 
-  const populated = await Student.findById(created._id)
+  await logAudit({
+    tenantId: req.tenantId,
+    user: req.user,
+    action: 'member.create',
+    entityType: 'Student',
+    entityId: created._id,
+    description: `Created member ${created.name} (${plan} plan, monthly fee: ${fees.monthlyFee})`,
+    changes: { name: created.name, monthlyFee: fees.monthlyFee, plan },
+  });
+
+  const populated = await Student.findOne({ _id: created._id, tenantId: req.tenantId })
     .populate('classPlan')
     .populate('subjects')
     .lean();
@@ -116,8 +128,8 @@ export const createStudent = asyncHandler(async (req, res) => {
 
 // PUT /api/students/:id
 export const updateStudent = asyncHandler(async (req, res) => {
-  const existing = await Student.findById(req.params.id);
-  if (!existing) throw new ApiError(404, 'Student not found');
+  const existing = await Student.findOne({ _id: req.params.id, tenantId: req.tenantId });
+  if (!existing) throw new ApiError(404, 'Member not found in your workspace');
 
   const { fees, plan, start, end, subjectIds } = await buildFeeAndSubscription(
     req.body,
@@ -141,13 +153,27 @@ export const updateStudent = asyncHandler(async (req, res) => {
     subscriptionEnd: end,
   };
 
-  const updated = await Student.findByIdAndUpdate(req.params.id, fields, {
-    new: true,
-    runValidators: true,
-  })
+  const updated = await Student.findOneAndUpdate(
+    { _id: req.params.id, tenantId: req.tenantId },
+    fields,
+    { new: true, runValidators: true }
+  )
     .populate('classPlan')
     .populate('subjects')
     .lean();
+
+  await logAudit({
+    tenantId: req.tenantId,
+    user: req.user,
+    action: 'member.update',
+    entityType: 'Student',
+    entityId: existing._id,
+    description: `Updated member ${updated.name}`,
+    changes: {
+      before: { name: existing.name, status: existing.status, monthlyFee: existing.monthlyFee },
+      after: { name: updated.name, status: updated.status, monthlyFee: updated.monthlyFee },
+    },
+  });
 
   const { reminderLeadDays } = await getSettings();
   res.json(decorateStudent(updated, reminderLeadDays));
@@ -155,12 +181,23 @@ export const updateStudent = asyncHandler(async (req, res) => {
 
 // DELETE /api/students/:id  — cascades payments + reminder logs
 export const deleteStudent = asyncHandler(async (req, res) => {
-  const student = await Student.findById(req.params.id);
-  if (!student) throw new ApiError(404, 'Student not found');
+  const student = await Student.findOne({ _id: req.params.id, tenantId: req.tenantId });
+  if (!student) throw new ApiError(404, 'Member not found in your workspace');
+
   await Promise.all([
-    Payment.deleteMany({ student: student._id }),
-    ReminderLog.deleteMany({ student: student._id }),
+    Payment.deleteMany({ student: student._id, tenantId: req.tenantId }),
+    ReminderLog.deleteMany({ student: student._id, tenantId: req.tenantId }),
     student.deleteOne(),
   ]);
-  res.json({ message: 'Student and related records deleted' });
+
+  await logAudit({
+    tenantId: req.tenantId,
+    user: req.user,
+    action: 'member.delete',
+    entityType: 'Student',
+    entityId: student._id,
+    description: `Deleted member ${student.name} and related history`,
+  });
+
+  res.json({ message: 'Record and related data deleted' });
 });
