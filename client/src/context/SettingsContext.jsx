@@ -49,7 +49,12 @@ export function SettingsProvider({ children }) {
     () => getPreset(settings.businessType || DEFAULT_BUSINESS_TYPE),
     [settings.businessType]
   );
-  const labels = businessPreset.labels;
+  const labels = useMemo(() => {
+    return {
+      ...businessPreset.labels,
+      ...(settings.customLabels || {}),
+    };
+  }, [businessPreset, settings.customLabels]);
 
   const value = {
     settings,

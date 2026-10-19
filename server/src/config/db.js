@@ -20,12 +20,27 @@ export async function connectDB(uri = env.mongoUri) {
     listenersBound = true;
   }
 
-  const conn = await mongoose.connect(uri, {
-    autoIndex: env.mongoAutoIndex,
-    serverSelectionTimeoutMS: 10000,
-  });
-  console.log(`✔ MongoDB connected → ${conn.connection.host}/${conn.connection.name}`);
-  return conn;
+  let conn;
+  try {
+    conn = await mongoose.connect(uri, {
+      autoIndex: env.mongoAutoIndex,
+      serverSelectionTimeoutMS: 3000,
+    });
+    console.log(`✔ MongoDB connected → ${conn.connection.host}/${conn.connection.name}`);
+    return conn;
+  } catch (err) {
+    if (env.nodeEnv !== 'production') {
+      console.warn(`\n⚠ Could not connect to external MongoDB at ${uri} (${err.message})`);
+      console.log('⚡ Launching embedded in-memory MongoDB instance for local dev…');
+      const { MongoMemoryServer } = await import('mongodb-memory-server');
+      const mongod = await MongoMemoryServer.create();
+      const memUri = mongod.getUri();
+      conn = await mongoose.connect(memUri, { autoIndex: env.mongoAutoIndex });
+      console.log(`✔ Embedded MongoDB running → ${conn.connection.host}/${conn.connection.name}\n`);
+      return conn;
+    }
+    throw err;
+  }
 }
 
 export async function disconnectDB() {

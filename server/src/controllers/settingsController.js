@@ -9,6 +9,7 @@ export const getSettingsHandler = asyncHandler(async (req, res) => {
   res.json({
     instituteName: s.instituteName,
     businessType: s.businessType || 'education',
+    customLabels: s.customLabels || {},
     currency: s.currency,
     reminderTemplate: s.reminderTemplate,
     reminderLeadDays: s.reminderLeadDays,
@@ -30,9 +31,10 @@ export const getSettingsHandler = asyncHandler(async (req, res) => {
 // PUT /api/settings
 export const updateSettingsHandler = asyncHandler(async (req, res) => {
   const s = await getSettings();
-  const { instituteName, businessType, currency, reminderTemplate, reminderLeadDays } = req.body;
+  const { instituteName, businessType, customLabels, currency, reminderTemplate, reminderLeadDays } = req.body;
   if (instituteName !== undefined) s.instituteName = instituteName;
   if (businessType !== undefined) s.businessType = businessType;
+  if (customLabels !== undefined) s.customLabels = customLabels;
   if (currency !== undefined) s.currency = currency;
   if (reminderTemplate !== undefined) s.reminderTemplate = reminderTemplate;
   if (reminderLeadDays !== undefined) s.reminderLeadDays = reminderLeadDays;
@@ -40,6 +42,7 @@ export const updateSettingsHandler = asyncHandler(async (req, res) => {
   res.json({
     instituteName: s.instituteName,
     businessType: s.businessType,
+    customLabels: s.customLabels || {},
     currency: s.currency,
     reminderTemplate: s.reminderTemplate,
     reminderLeadDays: s.reminderLeadDays,

@@ -92,6 +92,7 @@ export default function Settings() {
   const [form, setForm] = useState({
     instituteName: '',
     businessType: 'education',
+    customLabels: {},
     currency: 'INR',
     reminderLeadDays: 7,
     reminderTemplate: '',
@@ -102,6 +103,7 @@ export default function Settings() {
     setForm({
       instituteName: settings.instituteName || '',
       businessType: settings.businessType || 'education',
+      customLabels: settings.customLabels || {},
       currency: settings.currency || 'INR',
       reminderLeadDays: settings.reminderLeadDays ?? 7,
       reminderTemplate: settings.reminderTemplate || settings.defaultTemplate || '',
@@ -109,12 +111,18 @@ export default function Settings() {
   }, [settings]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const setCustomLabel = (labelKey) => (e) =>
+    setForm((f) => ({
+      ...f,
+      customLabels: { ...f.customLabels, [labelKey]: e.target.value },
+    }));
 
   function handleBusinessTypeChange(newType) {
     const preset = getPreset(newType);
     setForm((f) => ({
       ...f,
       businessType: newType,
+      customLabels: {}, // reset custom overrides when switching preset
       reminderTemplate: preset.defaultTemplate || f.reminderTemplate,
     }));
   }
@@ -126,6 +134,7 @@ export default function Settings() {
       await SettingsAPI.update({
         instituteName: form.instituteName.trim(),
         businessType: form.businessType,
+        customLabels: form.customLabels,
         currency: form.currency,
         reminderLeadDays: Number(form.reminderLeadDays),
         reminderTemplate: form.reminderTemplate,
@@ -228,6 +237,95 @@ export default function Settings() {
                   max={60}
                   value={form.reminderLeadDays}
                   onChange={set('reminderLeadDays')}
+                />
+              </Field>
+            </div>
+          </Card>
+
+          {/* Custom Terminology Overrides */}
+          <Card
+            title="Custom Terminology &amp; Keywords"
+            subtitle="Rename any term below to customize your exact business words (e.g., Member, Tier, Personal Trainer, Gym pass)"
+          >
+            <div className="form-grid">
+              <Field label="Member Singular (e.g. Member, Client, Student)">
+                <input
+                  className="input"
+                  value={form.customLabels.memberSingular ?? currentPreset.labels.memberSingular}
+                  onChange={setCustomLabel('memberSingular')}
+                  placeholder={currentPreset.labels.memberSingular}
+                />
+              </Field>
+              <Field label="Member Plural (e.g. Members, Clients, Students)">
+                <input
+                  className="input"
+                  value={form.customLabels.memberPlural ?? currentPreset.labels.memberPlural}
+                  onChange={setCustomLabel('memberPlural')}
+                  placeholder={currentPreset.labels.memberPlural}
+                />
+              </Field>
+              <Field label="Category / Tier Singular (e.g. Tier, Batch, Class, Seat)">
+                <input
+                  className="input"
+                  value={form.customLabels.categorySingular ?? currentPreset.labels.categorySingular}
+                  onChange={setCustomLabel('categorySingular')}
+                  placeholder={currentPreset.labels.categorySingular}
+                />
+              </Field>
+              <Field label="Category / Tier Plural (e.g. Tiers, Batches, Classes)">
+                <input
+                  className="input"
+                  value={form.customLabels.categoryPlural ?? currentPreset.labels.categoryPlural}
+                  onChange={setCustomLabel('categoryPlural')}
+                  placeholder={currentPreset.labels.categoryPlural}
+                />
+              </Field>
+              <Field label="Add-on Singular (e.g. Add-on, Personal Training, Locker, Subject)">
+                <input
+                  className="input"
+                  value={form.customLabels.itemSingular ?? currentPreset.labels.itemSingular}
+                  onChange={setCustomLabel('itemSingular')}
+                  placeholder={currentPreset.labels.itemSingular}
+                />
+              </Field>
+              <Field label="Add-on Plural (e.g. Add-ons, Facilities, Subjects)">
+                <input
+                  className="input"
+                  value={form.customLabels.itemPlural ?? currentPreset.labels.itemPlural}
+                  onChange={setCustomLabel('itemPlural')}
+                  placeholder={currentPreset.labels.itemPlural}
+                />
+              </Field>
+              <Field label="Subscription / Plan Title (e.g. Membership, Subscription, Pass)">
+                <input
+                  className="input"
+                  value={form.customLabels.subscriptionLabel ?? currentPreset.labels.subscriptionLabel}
+                  onChange={setCustomLabel('subscriptionLabel')}
+                  placeholder={currentPreset.labels.subscriptionLabel}
+                />
+              </Field>
+              <Field label="Fee Label (e.g. Membership fee, Subscription fee, Dues)">
+                <input
+                  className="input"
+                  value={form.customLabels.feeLabel ?? currentPreset.labels.feeLabel}
+                  onChange={setCustomLabel('feeLabel')}
+                  placeholder={currentPreset.labels.feeLabel}
+                />
+              </Field>
+              <Field label="Contact Person / Sponsor Label (e.g. Emergency Contact, Parent, Billing Contact)">
+                <input
+                  className="input"
+                  value={form.customLabels.contactPersonLabel ?? currentPreset.labels.contactPersonLabel}
+                  onChange={setCustomLabel('contactPersonLabel')}
+                  placeholder={currentPreset.labels.contactPersonLabel}
+                />
+              </Field>
+              <Field label="Add/Enroll Button Action (e.g. Register member, Enroll student)">
+                <input
+                  className="input"
+                  value={form.customLabels.enrollAction ?? currentPreset.labels.enrollAction}
+                  onChange={setCustomLabel('enrollAction')}
+                  placeholder={currentPreset.labels.enrollAction}
                 />
               </Field>
             </div>

@@ -19,6 +19,11 @@ const settingsSchema = new mongoose.Schema(
       enum: ['education', 'gym', 'library', 'general'],
       default: env.businessType || 'education',
     },
+    customLabels: {
+      type: Map,
+      of: String,
+      default: {},
+    },
     currency: { type: String, default: 'INR' },
     reminderTemplate: { type: String, default: DEFAULT_REMINDER_TEMPLATE },
     // A subscription with <= this many days left is treated as "expiring soon".
