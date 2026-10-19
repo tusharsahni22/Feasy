@@ -172,3 +172,4 @@ export const manualAttendance = asyncHandler(async (req, res) => {
 
   res.status(201).json(attendance);
 });
+

@@ -62,3 +62,4 @@ const discountCodeSchema = new mongoose.Schema(
 discountCodeSchema.index({ tenantId: 1, code: 1 }, { unique: true });
 
 export default mongoose.model('DiscountCode', discountCodeSchema);
+

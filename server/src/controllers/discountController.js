@@ -133,3 +133,4 @@ export const toggleDiscount = asyncHandler(async (req, res) => {
 
   res.json(discount);
 });
+

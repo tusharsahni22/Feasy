@@ -8,3 +8,4 @@ router.get('/', getAttendance);
 router.post('/manual', manualAttendance);
 
 export default router;
+

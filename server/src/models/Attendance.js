@@ -49,3 +49,4 @@ attendanceSchema.index({ tenantId: 1, date: 1 });
 attendanceSchema.index({ tenantId: 1, studentId: 1, date: 1 });
 
 export default mongoose.model('Attendance', attendanceSchema);
+

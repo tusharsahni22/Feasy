@@ -9,3 +9,4 @@ router.post('/validate', validateDiscount);
 router.patch('/:id/toggle', toggleDiscount);
 
 export default router;
+

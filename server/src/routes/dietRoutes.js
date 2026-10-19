@@ -9,3 +9,4 @@ router.post('/send/:id', sendDietPlan);
 router.post('/bulk-send', bulkSendDiet);
 
 export default router;
+

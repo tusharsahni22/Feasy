@@ -127,3 +127,4 @@ export default function DietPlanModal({ student, onClose, onUpdated }) {
     </Modal>
   );
 }
+

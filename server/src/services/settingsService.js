@@ -24,3 +24,6 @@ export async function getSettings(tenantId) {
   if (!doc) doc = await Settings.create({ key: 'app' });
   return doc;
 }
+
+export const getSettingsForTenant = getSettings;
+

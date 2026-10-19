@@ -43,3 +43,17 @@ export async function logAudit({
   }
 }
 
+// Alias for convenience
+export const recordAudit = async ({ tenantId, userId, user, action, entity, entityType, entityId, details, changes, ipAddress, ip }) => {
+  return logAudit({
+    tenantId,
+    user: user || (userId ? { _id: userId } : null),
+    action: action || 'action',
+    entityType: entityType || entity || 'General',
+    entityId,
+    description: typeof details === 'string' ? details : JSON.stringify(details || {}),
+    changes: changes || details,
+    ip: ip || ipAddress || '',
+  });
+};
+
