@@ -1,46 +1,23 @@
-# Feasy — production container.
-# MongoDB is expected to live in MongoDB Atlas (cloud): set MONGODB_URI in server/.env.
-# An optional local MongoDB service is included below (commented out) if you'd
-# rather not use Atlas.
-#
-#   1) cp server/.env.example server/.env   # then fill in MONGODB_URI (Atlas)
-#   2) docker compose up -d --build
-#   3) (first run) docker compose run --rm app npm run seed   # optional demo data
-
 services:
   app:
+    image: ${DOCKER_IMAGE:-tusharsahni22/feasy:latest}
     build:
       context: .
       dockerfile: Dockerfile
-    image: feasy/feasy:latest
+      args:
+        - VITE_API_URL=${VITE_API_URL:-}
     container_name: feasy-app
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "80:5000"
     env_file:
-      - ./server/.env
+      - ${ENV_FILE:-.env}
     environment:
-      NODE_ENV: production
-      PORT: "5000"
-    # Uncomment if you enable the local mongo service below:
-    # depends_on:
-    #   mongo:
-    #     condition: service_healthy
-
-  # ── Optional: run MongoDB locally instead of Atlas ───────────────────────────
-  # Uncomment this whole service AND set in server/.env:
-  #   MONGODB_URI=mongodb://mongo:27017/feasy
-  # mongo:
-  #   image: mongo:7
-  #   container_name: feasy-mongo
-  #   restart: unless-stopped
-  #   volumes:
-  #     - mongo-data:/data/db
-  #   healthcheck:
-  #     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
-# volumes:
-#   mongo-data:
+      - PORT=5000
+      - NODE_ENV=${NODE_ENV:-production}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
