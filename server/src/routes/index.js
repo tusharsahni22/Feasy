@@ -6,6 +6,7 @@ import paymentRoutes from './paymentRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import reminderRoutes from './reminderRoutes.js';
 import settingsRoutes from './settingsRoutes.js';
+import authRoutes from './authRoutes.js';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/payments', paymentRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/reminders', reminderRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/auth', authRoutes);
 
 export default router;

@@ -13,6 +13,7 @@ export const env = {
   // Build indexes automatically. Fine for small deployments; set
   // MONGO_AUTO_INDEX=false on very large Atlas collections and manage indexes explicitly.
   mongoAutoIndex: process.env.MONGO_AUTO_INDEX !== 'false',
+  jwtSecret: process.env.JWT_SECRET || 'feasy_super_secret_jwt_key_2026',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   // Absolute path to the built client (client/dist). Blank = auto-detect relative to server.
   clientDist: process.env.CLIENT_STATIC_DIR || '',

@@ -1,6 +1,8 @@
 import { useLocation } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, LogOut, User as UserIcon } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import Button from '../ui/Button.jsx';
 
 function titleFor(path, labels) {
   const mSingular = labels.memberSingular || 'Member';
@@ -23,6 +25,7 @@ function titleFor(path, labels) {
 export default function Topbar({ onMenu }) {
   const { pathname } = useLocation();
   const { settings, labels } = useSettings();
+  const { user, tenant, logout } = useAuth();
   const [title, sub] = titleFor(pathname, labels);
 
   return (
@@ -35,7 +38,45 @@ export default function Topbar({ onMenu }) {
         <div className="topbar-sub">{sub}</div>
       </div>
       <div className="topbar-spacer" />
-      <span className="chip">{settings.instituteName || 'Feasy Workspace'}</span>
+      <div className="hstack wrap" style={{ gap: 10, alignItems: 'center' }}>
+        <span className="chip">{tenant?.name || settings.instituteName || 'Feasy Workspace'}</span>
+        {user && (
+          <div
+            className="hstack"
+            style={{
+              gap: 8,
+              background: 'var(--surface-2)',
+              padding: '4px 10px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-soft)',
+            }}
+          >
+            <UserIcon size={14} style={{ color: 'var(--saffron)' }} />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>{user.name}</span>
+            <span
+              style={{
+                fontSize: 11,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                background: 'var(--surface-3)',
+                padding: '2px 6px',
+                borderRadius: 4,
+                color: 'var(--text-dim)',
+              }}
+            >
+              {user.role}
+            </span>
+            <Button
+              variant="subtle"
+              size="sm"
+              icon={LogOut}
+              title="Sign out"
+              onClick={logout}
+              style={{ padding: '2px 6px', height: 'auto', marginLeft: 4 }}
+            />
+          </div>
+        )}
+      </div>
     </header>
   );
 }

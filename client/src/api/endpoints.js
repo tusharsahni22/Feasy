@@ -44,3 +44,9 @@ export const SettingsAPI = {
   get: () => api.get('/settings').then((r) => r.data),
   update: (body) => api.put('/settings', body).then((r) => r.data),
 };
+
+export const AuthAPI = {
+  login: (data) => api.post('/auth/login', data).then((r) => r.data),
+  register: (data) => api.post('/auth/register', data).then((r) => r.data),
+  me: () => api.get('/auth/me').then((r) => r.data),
+};
