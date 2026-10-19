@@ -14,6 +14,9 @@ import {
   CheckSquare,
   XSquare,
   Plus,
+  QrCode,
+  Printer,
+  ExternalLink,
 } from 'lucide-react';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -23,6 +26,7 @@ import Field from '../components/ui/Field.jsx';
 import { AttendanceAPI, StudentsAPI } from '../api/endpoints.js';
 import { formatDate } from '../lib/format.js';
 import { useSettings } from '../context/SettingsContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function getTodayString() {
   const d = new Date();
@@ -35,7 +39,8 @@ function getCurrentTimeString() {
 }
 
 export default function Attendance() {
-  const { labels } = useSettings();
+  const { labels, settings } = useSettings();
+  const { tenant } = useAuth();
   const [activeTab, setActiveTab] = useState('scanner'); // 'scanner' | 'roster' | 'manual'
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [scanCode, setScanCode] = useState('');
@@ -45,6 +50,9 @@ export default function Attendance() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [markingId, setMarkingId] = useState(null);
+
+  // Desk QR Code Printable Poster state
+  const [showDeskQr, setShowDeskQr] = useState(false);
 
   // Manual Check-In Modal state
   const [showManualModal, setShowManualModal] = useState(false);
@@ -221,6 +229,14 @@ export default function Attendance() {
               }}
             />
           </div>
+          <Button
+            variant="primary"
+            icon={QrCode}
+            onClick={() => setShowDeskQr(true)}
+            style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none' }}
+          >
+            Desk QR Poster
+          </Button>
           <Button variant="ghost" icon={Plus} onClick={() => setShowManualModal(true)}>
             Record Manual Time
           </Button>
@@ -641,6 +657,100 @@ export default function Attendance() {
               />
             </Field>
           </div>
+        </Modal>
+      )}
+
+      {/* Desk QR Printable Poster Modal */}
+      {showDeskQr && (
+        <Modal
+          title="Printable Entrance / Desk QR Poster"
+          onClose={() => setShowDeskQr(false)}
+          footer={
+            <>
+              <Button variant="subtle" onClick={() => setShowDeskQr(false)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                icon={Printer}
+                onClick={() => {
+                  window.print();
+                }}
+              >
+                Print Poster
+              </Button>
+            </>
+          }
+        >
+          {(() => {
+            const tenantSlug = tenant?.slug || 'alpha';
+            const checkInUrl = `${window.location.origin}/checkin/${tenantSlug}`;
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkInUrl)}&margin=10`;
+
+            return (
+              <div
+                id="desk-qr-printable"
+                style={{
+                  textAlign: 'center',
+                  background: '#ffffff',
+                  color: '#111827',
+                  padding: 32,
+                  borderRadius: 16,
+                  border: '2px solid #e5e7eb',
+                }}
+              >
+                <div style={{ textTransform: 'uppercase', letterSpacing: 2, fontSize: 13, fontWeight: 700, color: '#f59e0b', marginBottom: 6 }}>
+                  {settings.instituteName || tenant?.name || 'Fitness & Learning Center'}
+                </div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 10px 0', color: '#111827' }}>
+                  Self Attendance Station
+                </h2>
+                <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 24px 0' }}>
+                  Scan with your mobile camera to Check In / Check Out
+                </p>
+
+                <div
+                  style={{
+                    display: 'inline-block',
+                    padding: 16,
+                    background: '#fff',
+                    borderRadius: 16,
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                    marginBottom: 20,
+                  }}
+                >
+                  <img
+                    src={qrImageUrl}
+                    alt="Desk Check-In QR Code"
+                    style={{ width: 220, height: 220, display: 'block', borderRadius: 8 }}
+                  />
+                </div>
+
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                  📱 How it works:
+                </div>
+                <div style={{ fontSize: 12, color: '#6b7280', maxWidth: 300, margin: '0 auto 16px auto', lineHeight: 1.5 }}>
+                  1. Open Camera / WhatsApp scanner on your phone.<br />
+                  2. Scan the QR code above.<br />
+                  3. Enter phone number to record your in/out time!
+                </div>
+
+                <div
+                  style={{
+                    background: '#f3f4f6',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: '#4b5563',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  Direct link: {checkInUrl}
+                </div>
+              </div>
+            );
+          })()}
         </Modal>
       )}
     </div>

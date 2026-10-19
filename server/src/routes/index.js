@@ -21,8 +21,9 @@ router.get('/health', (req, res) =>
   res.json({ status: 'ok', service: 'feasy-api', time: new Date().toISOString() })
 );
 
-// Public Auth routes
+// Public Auth & Desk QR Self Check-In routes
 router.use('/auth', authRoutes);
+router.use('/attendance', attendanceRoutes);
 
 // Protected Tenant-scoped routes
 router.use('/students', requireAuth, studentRoutes);
@@ -35,7 +36,6 @@ router.use('/settings', requireAuth, settingsRoutes);
 router.use('/workspaces', requireAuth, workspaceRoutes);
 router.use('/users', requireAuth, userRoutes);
 router.use('/audit-logs', requireAuth, auditRoutes);
-router.use('/attendance', requireAuth, attendanceRoutes);
 router.use('/discounts', requireAuth, discountRoutes);
 router.use('/diet', requireAuth, dietRoutes);
 

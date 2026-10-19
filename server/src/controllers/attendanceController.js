@@ -2,6 +2,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import Attendance from '../models/Attendance.js';
 import Student from '../models/Student.js';
+import Tenant from '../models/Tenant.js';
 import { recordAudit } from '../services/auditService.js';
 
 // Helper to get local YYYY-MM-DD
@@ -249,4 +250,139 @@ export const updateCheckOut = asyncHandler(async (req, res) => {
 
   res.json(attendance);
 });
+
+/**
+ * Public Info endpoint for Desk QR code self check-in landing page.
+ * GET /api/attendance/public/info/:slug
+ */
+export const getTenantCheckInInfo = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+  const tenant = await Tenant.findOne({ slug: slug.toLowerCase() }).select('name slug businessType branding');
+  if (!tenant) {
+    throw new ApiError(404, 'Institute/Gym not found for this QR code');
+  }
+
+  res.json({
+    name: tenant.name,
+    slug: tenant.slug,
+    businessType: tenant.businessType,
+    branding: tenant.branding,
+  });
+});
+
+/**
+ * Public Self Check-In endpoint when student scans Desk QR with their own phone.
+ * POST /api/attendance/public/checkin/:slug
+ */
+export const selfCheckIn = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+  const { identifier } = req.body; // Can be mobile number, barcode, or member ID
+
+  if (!identifier || !identifier.trim()) {
+    throw new ApiError(400, 'Enter your registered phone number or Member ID');
+  }
+
+  const tenant = await Tenant.findOne({ slug: slug.toLowerCase() });
+  if (!tenant) {
+    throw new ApiError(404, 'Institute/Gym not found');
+  }
+
+  const cleanId = identifier.trim();
+
+  // Search by parentPhone or barcode or ID
+  const filter = {
+    tenantId: tenant._id,
+    $or: [
+      { parentPhone: cleanId },
+      { barcode: cleanId },
+    ],
+  };
+
+  if (cleanId.match(/^[0-9a-fA-F]{24}$/)) {
+    filter.$or.push({ _id: cleanId });
+  }
+
+  const student = await Student.findOne(filter).populate('classPlan', 'name');
+  if (!student) {
+    throw new ApiError(404, `No member found with phone / ID "${cleanId}". Please check or see reception.`);
+  }
+
+  const today = getTodayDateString();
+
+  // Find attendance record for today
+  let attendance = await Attendance.findOne({
+    tenantId: tenant._id,
+    studentId: student._id,
+    date: today,
+  }).sort({ createdAt: -1 });
+
+  let action = 'checked_in';
+
+  if (!attendance) {
+    // Fresh check-in for today
+    attendance = await Attendance.create({
+      tenantId: tenant._id,
+      studentId: student._id,
+      date: today,
+      checkIn: new Date(),
+      method: 'qr',
+      status: 'present',
+    });
+    action = 'checked_in';
+  } else if (!attendance.checkOut) {
+    // Check if scanned again within 1 minute
+    const diffMinutes = Math.max(0, Math.round((Date.now() - new Date(attendance.checkIn).getTime()) / 60000));
+    if (diffMinutes < 1) {
+      return res.json({
+        message: `You are already checked in!`,
+        action: 'already_checked_in',
+        student: {
+          name: student.name,
+          phone: student.parentPhone,
+          shiftTiming: student.shiftTiming,
+          dietPlan: student.dietPlan,
+        },
+        attendance,
+      });
+    }
+
+    attendance.checkOut = new Date();
+    attendance.durationMinutes = diffMinutes;
+    await attendance.save();
+    action = 'checked_out';
+  } else {
+    // 2nd visit check-in for today
+    attendance = await Attendance.create({
+      tenantId: tenant._id,
+      studentId: student._id,
+      date: today,
+      checkIn: new Date(),
+      method: 'qr',
+      status: 'present',
+    });
+    action = 'checked_in';
+  }
+
+  // Check subscription expiry
+  const isExpired = new Date(student.subscriptionEnd) < new Date();
+
+  res.json({
+    message: action === 'checked_in' ? `Welcome, ${student.name}!` : `Goodbye, ${student.name}!`,
+    action,
+    isExpired,
+    student: {
+      _id: student._id,
+      name: student.name,
+      parentPhone: student.parentPhone,
+      bloodGroup: student.bloodGroup,
+      shiftTiming: student.shiftTiming,
+      classPlan: student.classPlan?.name || 'Standard',
+      subscriptionEnd: student.subscriptionEnd,
+      status: student.status,
+      dietPlan: student.dietPlan,
+    },
+    attendance,
+  });
+});
+
 

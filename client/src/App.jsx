@@ -14,6 +14,7 @@ import AuditLogs from './pages/AuditLogs.jsx';
 import Attendance from './pages/Attendance.jsx';
 import Discounts from './pages/Discounts.jsx';
 import DietPlans from './pages/DietPlans.jsx';
+import StudentSelfCheckIn from './pages/StudentSelfCheckIn.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -32,6 +33,7 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Public Routes */}
       <Route
         path="/login"
         element={!loading && isAuthenticated ? <Navigate to="/" replace /> : <Login />}
@@ -40,6 +42,8 @@ export default function App() {
         path="/register"
         element={!loading && isAuthenticated ? <Navigate to="/" replace /> : <Register />}
       />
+      {/* Zero-Hardware Desk QR Self Check-In for Students */}
+      <Route path="/checkin/:slug" element={<StudentSelfCheckIn />} />
 
       <Route
         element={
