@@ -10,6 +10,9 @@ import authRoutes from './authRoutes.js';
 import workspaceRoutes from './workspaceRoutes.js';
 import userRoutes from './userRoutes.js';
 import auditRoutes from './auditRoutes.js';
+import attendanceRoutes from './attendanceRoutes.js';
+import discountRoutes from './discountRoutes.js';
+import dietRoutes from './dietRoutes.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -32,5 +35,8 @@ router.use('/settings', requireAuth, settingsRoutes);
 router.use('/workspaces', requireAuth, workspaceRoutes);
 router.use('/users', requireAuth, userRoutes);
 router.use('/audit-logs', requireAuth, auditRoutes);
+router.use('/attendance', requireAuth, attendanceRoutes);
+router.use('/discounts', requireAuth, discountRoutes);
+router.use('/diet', requireAuth, dietRoutes);
 
 export default router;

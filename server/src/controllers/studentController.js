@@ -90,6 +90,9 @@ export const createStudent = asyncHandler(async (req, res) => {
 
   const { fees, plan, start, end, subjectIds } = await buildFeeAndSubscription(req.body);
 
+  // Auto-generate unique barcode if not supplied
+  const barcode = req.body.barcode?.trim() || `MBR-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
+
   const created = await Student.create({
     tenantId: req.tenantId,
     name,
@@ -106,6 +109,9 @@ export const createStudent = asyncHandler(async (req, res) => {
     subscriptionEnd: end,
     status: req.body.status || 'active',
     notes: req.body.notes,
+    bloodGroup: req.body.bloodGroup || 'Unknown',
+    shiftTiming: req.body.shiftTiming || 'General (06:00 AM - 10:00 PM)',
+    barcode,
   });
 
   await logAudit({
@@ -115,7 +121,7 @@ export const createStudent = asyncHandler(async (req, res) => {
     entityType: 'Student',
     entityId: created._id,
     description: `Created member ${created.name} (${plan} plan, monthly fee: ${fees.monthlyFee})`,
-    changes: { name: created.name, monthlyFee: fees.monthlyFee, plan },
+    changes: { name: created.name, monthlyFee: fees.monthlyFee, plan, barcode },
   });
 
   const populated = await Student.findOne({ _id: created._id, tenantId: req.tenantId })
@@ -144,6 +150,9 @@ export const updateStudent = asyncHandler(async (req, res) => {
     ...(req.body.classPlan !== undefined && { classPlan: req.body.classPlan }),
     ...(req.body.notes !== undefined && { notes: req.body.notes }),
     ...(req.body.status !== undefined && { status: req.body.status }),
+    ...(req.body.bloodGroup !== undefined && { bloodGroup: req.body.bloodGroup }),
+    ...(req.body.shiftTiming !== undefined && { shiftTiming: req.body.shiftTiming }),
+    ...(req.body.barcode !== undefined && { barcode: req.body.barcode.trim() }),
     subjects: subjectIds,
     baseFee: fees.baseFee,
     subjectsFee: fees.subjectsFee,

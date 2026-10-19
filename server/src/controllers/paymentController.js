@@ -1,5 +1,6 @@
 import Payment from '../models/Payment.js';
 import Student from '../models/Student.js';
+import DiscountCode from '../models/DiscountCode.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { addMonths, planToMonths } from '../utils/subscription.js';
@@ -48,6 +49,9 @@ export const createPayment = asyncHandler(async (req, res) => {
     renew,
     renewPlan,
     restartDate,
+    discountCode,
+    discountAmount = 0,
+    originalAmount,
   } = req.body;
 
   if (!studentId) throw new ApiError(400, 'Student is required');
@@ -57,6 +61,14 @@ export const createPayment = asyncHandler(async (req, res) => {
 
   const student = await Student.findOne({ _id: studentId, tenantId: req.tenantId });
   if (!student) throw new ApiError(404, 'Student not found');
+
+  // If a discount code was redeemed, bump its usage
+  if (discountCode) {
+    await DiscountCode.findOneAndUpdate(
+      { tenantId: req.tenantId, code: discountCode.trim().toUpperCase() },
+      { $inc: { usageCount: 1 } }
+    );
+  }
 
   const when = paidAt ? new Date(paidAt) : new Date();
 
@@ -69,6 +81,9 @@ export const createPayment = asyncHandler(async (req, res) => {
     note,
     paidAt: when,
     renewed: Boolean(renew),
+    discountCode: discountCode ? discountCode.trim().toUpperCase() : '',
+    discountAmount: Number(discountAmount) || 0,
+    originalAmount: originalAmount !== undefined ? Number(originalAmount) : Number(amount),
   });
 
   // Optionally extend or restart the subscription (renewal).

@@ -4,7 +4,7 @@ import { IndianRupee } from 'lucide-react';
 import Modal from '../ui/Modal.jsx';
 import Button from '../ui/Button.jsx';
 import Field from '../ui/Field.jsx';
-import { PaymentsAPI } from '../../api/endpoints.js';
+import { PaymentsAPI, DiscountsAPI } from '../../api/endpoints.js';
 import { PAYMENT_METHODS, PLAN_OPTIONS, PLAN_MONTHS } from '../../lib/constants.js';
 import { useSettings } from '../../context/SettingsContext.jsx';
 import { toDateInput, formatDate } from '../../lib/format.js';
@@ -26,7 +26,11 @@ function currentMonthKey() {
 
 export default function PaymentModal({ student, onClose, onSaved }) {
   const { money, labels } = useSettings();
+  const [originalAmount, setOriginalAmount] = useState(student?.monthlyFee ?? 0);
   const [amount, setAmount] = useState(student?.monthlyFee ?? 0);
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [validatingDiscount, setValidatingDiscount] = useState(false);
   const [method, setMethod] = useState('cash');
   const [forMonth, setForMonth] = useState(currentMonthKey());
   const [paidAt, setPaidAt] = useState(toDateInput(new Date()));
@@ -36,6 +40,32 @@ export default function PaymentModal({ student, onClose, onSaved }) {
   const [useRestartDate, setUseRestartDate] = useState(student?.status === 'paused');
   const [restartDate, setRestartDate] = useState(toDateInput(new Date()));
   const [saving, setSaving] = useState(false);
+
+  async function applyCoupon() {
+    if (!discountCode.trim()) return;
+    setValidatingDiscount(true);
+    try {
+      const res = await DiscountsAPI.validate({
+        code: discountCode.trim(),
+        amount: Number(originalAmount),
+      });
+      setAppliedDiscount(res);
+      setAmount(res.finalAmount);
+      toast.success(`Coupon ${res.code} applied! Saved ${money(res.discountAmount)}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Invalid coupon');
+      setAppliedDiscount(null);
+      setAmount(originalAmount);
+    } finally {
+      setValidatingDiscount(false);
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedDiscount(null);
+    setDiscountCode('');
+    setAmount(originalAmount);
+  }
 
   const previewEndDate = useMemo(() => {
     if (!student) return null;
@@ -74,6 +104,9 @@ export default function PaymentModal({ student, onClose, onSaved }) {
         renew,
         renewPlan: renew ? renewPlan : undefined,
         restartDate: renew && useRestartDate && restartDate ? restartDate : undefined,
+        discountCode: appliedDiscount ? appliedDiscount.code : undefined,
+        discountAmount: appliedDiscount ? appliedDiscount.discountAmount : 0,
+        originalAmount: Number(originalAmount),
       });
       toast.success(renew ? 'Payment recorded & subscription renewed' : 'Payment recorded');
       onSaved?.();
@@ -95,16 +128,63 @@ export default function PaymentModal({ student, onClose, onSaved }) {
             Cancel
           </Button>
           <Button variant="primary" icon={IndianRupee} onClick={submit} disabled={saving}>
-            {saving ? 'Saving…' : 'Save payment'}
+            {saving ? 'Saving…' : `Save payment (${money(amount)})`}
           </Button>
         </>
       }
     >
       <div className="form-grid">
-        <Field label="Amount" hint={`Monthly fee is ${money(student?.monthlyFee)}`}>
+        <Field label="Original Amount" hint={`Standard fee is ${money(student?.monthlyFee)}`}>
           <input
             type="number"
             className="input"
+            value={originalAmount}
+            min={0}
+            onChange={(e) => {
+              setOriginalAmount(e.target.value);
+              if (!appliedDiscount) setAmount(e.target.value);
+            }}
+          />
+        </Field>
+
+        <Field label="Discount Code / Coupon" hint="Optional promotional code">
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              type="text"
+              className="input"
+              style={{ textTransform: 'uppercase' }}
+              placeholder="e.g. FESTIVE20"
+              value={discountCode}
+              disabled={Boolean(appliedDiscount)}
+              onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+            />
+            {appliedDiscount ? (
+              <Button variant="subtle" size="sm" onClick={removeCoupon}>
+                Remove
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={applyCoupon}
+                disabled={validatingDiscount || !discountCode.trim()}
+              >
+                {validatingDiscount ? '...' : 'Apply'}
+              </Button>
+            )}
+          </div>
+          {appliedDiscount && (
+            <div style={{ fontSize: 12, color: 'var(--emerald)', marginTop: 4 }}>
+              ✓ Code {appliedDiscount.code} applied (-{money(appliedDiscount.discountAmount)})
+            </div>
+          )}
+        </Field>
+
+        <Field label="Net Payable Amount">
+          <input
+            type="number"
+            className="input"
+            style={{ fontWeight: 'bold', color: 'var(--saffron)' }}
             value={amount}
             min={0}
             onChange={(e) => setAmount(e.target.value)}

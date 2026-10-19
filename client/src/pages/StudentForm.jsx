@@ -34,6 +34,9 @@ const EMPTY = {
   subscriptionEnd: '',
   status: 'active',
   notes: '',
+  bloodGroup: 'Unknown',
+  shiftTiming: 'General (06:00 AM - 10:00 PM)',
+  barcode: '',
 };
 
 export default function StudentForm() {
@@ -71,6 +74,9 @@ export default function StudentForm() {
         subscriptionEnd: toDateInput(existing.subscriptionEnd),
         status: existing.status || 'active',
         notes: existing.notes || '',
+        bloodGroup: existing.bloodGroup || 'Unknown',
+        shiftTiming: existing.shiftTiming || 'General (06:00 AM - 10:00 PM)',
+        barcode: existing.barcode || '',
       });
       setChosen((existing.subjects || []).map((s) => s._id));
     }
@@ -141,6 +147,9 @@ export default function StudentForm() {
       subscriptionEnd: form.subscriptionEnd || undefined,
       status: form.status,
       notes: form.notes.trim() || undefined,
+      bloodGroup: form.bloodGroup,
+      shiftTiming: form.shiftTiming,
+      barcode: form.barcode?.trim() || undefined,
     };
     try {
       const saved = isEdit
@@ -225,6 +234,35 @@ export default function StudentForm() {
                   <option value="paused">On leave / break (Paused)</option>
                   <option value="inactive">Inactive</option>
                 </select>
+              </Field>
+              <Field label="Blood Group">
+                <select className="select" value={form.bloodGroup} onChange={set('bloodGroup')}>
+                  <option value="Unknown">Unknown / Not Disclosed</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </Field>
+              <Field label="Shift / Batch Timing">
+                <input
+                  className="input"
+                  value={form.shiftTiming}
+                  onChange={set('shiftTiming')}
+                  placeholder="e.g. Morning (06:00 AM - 10:00 AM)"
+                />
+              </Field>
+              <Field label="Barcode / Member ID Code" hint="Leave empty to auto-generate">
+                <input
+                  className="input"
+                  value={form.barcode}
+                  onChange={set('barcode')}
+                  placeholder="e.g. MBR-10294 or RFID tag"
+                />
               </Field>
             </div>
           </Card>

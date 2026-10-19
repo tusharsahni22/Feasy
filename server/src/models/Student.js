@@ -35,6 +35,34 @@ const studentSchema = new mongoose.Schema(
 
     status: { type: String, enum: ['active', 'inactive', 'paused'], default: 'active' },
     notes: { type: String, trim: true },
+
+    // Medical & Schedule
+    bloodGroup: {
+      type: String,
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'],
+      default: 'Unknown',
+    },
+    shiftTiming: {
+      type: String,
+      trim: true,
+      default: 'General (06:00 AM - 10:00 PM)',
+    },
+
+    // Barcode / RFID / Member ID Card code
+    barcode: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+
+    // Diet / Workout Plan
+    dietPlan: {
+      title: { type: String, trim: true, default: '' },
+      caloriesTarget: { type: Number, default: 0 },
+      details: { type: String, default: '' }, // Markdown / text formatted meals
+      pdfUrl: { type: String, default: '' },
+      updatedAt: { type: Date, default: Date.now },
+    },
   },
   { timestamps: true }
 );
@@ -42,5 +70,6 @@ const studentSchema = new mongoose.Schema(
 // Text-ish search helpers
 studentSchema.index({ name: 1 });
 studentSchema.index({ subscriptionEnd: 1 });
+studentSchema.index({ tenantId: 1, barcode: 1 });
 
 export default mongoose.model('Student', studentSchema);

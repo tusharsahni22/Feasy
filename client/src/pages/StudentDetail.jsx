@@ -25,8 +25,10 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import PaymentModal from '../components/students/PaymentModal.jsx';
 import ReminderModal from '../components/students/ReminderModal.jsx';
+import DietPlanModal from '../components/students/DietPlanModal.jsx';
 import { PLAN_LABELS, PLAN_MONTHS } from '../lib/constants.js';
 import { money as moneyFmt, formatDate, initials } from '../lib/format.js';
+import { Utensils } from 'lucide-react';
 
 function monthLabel(key) {
   if (!key) return '—';
@@ -49,6 +51,7 @@ export default function StudentDetail() {
 
   const [showPay, setShowPay] = useState(false);
   const [showRemind, setShowRemind] = useState(false);
+  const [showDiet, setShowDiet] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [payToDelete, setPayToDelete] = useState(null);
@@ -153,6 +156,9 @@ export default function StudentDetail() {
               Pause membership
             </Button>
           )}
+          <Button variant="ghost" icon={Utensils} onClick={() => setShowDiet(true)}>
+            Diet Plan
+          </Button>
           <Button variant="ghost" icon={Send} onClick={() => setShowRemind(true)}>
             Remind
           </Button>
@@ -230,7 +236,14 @@ export default function StudentDetail() {
                           )}
                         </td>
                         <td className="muted" data-label="For month">{monthLabel(p.forMonth)}</td>
-                        <td className="right num" data-label="Amount">{money(p.amount)}</td>
+                        <td className="right num" data-label="Amount">
+                          {money(p.amount)}
+                          {p.discountAmount > 0 && (
+                            <div style={{ fontSize: 11, color: 'var(--emerald)' }}>
+                              Coupon: {p.discountCode} (-{money(p.discountAmount)})
+                            </div>
+                          )}
+                        </td>
                         <td data-label="Method">
                           <Badge tone="neutral">{p.method}</Badge>
                         </td>
@@ -295,6 +308,30 @@ export default function StudentDetail() {
                 </div>
               </div>
 
+              <div className="hstack" style={{ gap: 12 }}>
+                <span className="stat-icon" style={{ '--tone-soft': 'var(--rose-soft)', '--tone': 'var(--rose)' }}>
+                  <User size={18} />
+                </span>
+                <div className="kv">
+                  <span className="k">Blood Group</span>
+                  <span className="v">{student.bloodGroup || 'Unknown'}</span>
+                </div>
+              </div>
+
+              <div className="kv">
+                <span className="k">Shift / Batch Timing</span>
+                <span className="v" style={{ fontSize: 13, fontWeight: 500 }}>
+                  {student.shiftTiming || 'General'}
+                </span>
+              </div>
+
+              <div className="kv">
+                <span className="k">Member Barcode / QR ID</span>
+                <span className="v" style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--saffron)' }}>
+                  {student.barcode || '—'}
+                </span>
+              </div>
+
               <div>
                 <span className="k" style={{ fontSize: 12, color: 'var(--text-faint)' }}>
                   {labels.itemPlural.toUpperCase()}
@@ -330,6 +367,9 @@ export default function StudentDetail() {
       )}
       {showRemind && (
         <ReminderModal students={[student]} onClose={() => setShowRemind(false)} />
+      )}
+      {showDiet && (
+        <DietPlanModal student={student} onClose={() => setShowDiet(false)} onUpdated={afterChange} />
       )}
       {confirmPause && (
         <ConfirmDialog

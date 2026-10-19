@@ -10,6 +10,9 @@ import {
   Building2,
   UserCheck,
   History,
+  ScanLine,
+  Utensils,
+  Tag,
 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -23,6 +26,9 @@ export default function Sidebar({ open }) {
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/students', label: labels.memberPlural || 'Members', icon: Users },
+    { to: '/attendance', label: 'Attendance', icon: ScanLine },
+    { to: '/diet-plans', label: 'Diet Plans', icon: Utensils },
+    { to: '/discounts', label: 'Discounts', icon: Tag },
     { to: '/fees', label: labels.plansPageTitle || 'Plans & Add-ons', icon: Layers },
     { to: '/payments', label: 'Payments', icon: Wallet },
     { to: '/reminders', label: 'Reminders', icon: BellRing },

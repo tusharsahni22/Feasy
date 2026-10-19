@@ -11,6 +11,9 @@ import Settings from './pages/Settings.jsx';
 import Workspaces from './pages/Workspaces.jsx';
 import Team from './pages/Team.jsx';
 import AuditLogs from './pages/AuditLogs.jsx';
+import Attendance from './pages/Attendance.jsx';
+import Discounts from './pages/Discounts.jsx';
+import DietPlans from './pages/DietPlans.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -50,6 +53,9 @@ export default function App() {
         <Route path="/students/new" element={<StudentForm />} />
         <Route path="/students/:id" element={<StudentDetail />} />
         <Route path="/students/:id/edit" element={<StudentForm />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/diet-plans" element={<DietPlans />} />
+        <Route path="/discounts" element={<Discounts />} />
         <Route path="/fees" element={<FeesPlans />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/reminders" element={<Reminders />} />

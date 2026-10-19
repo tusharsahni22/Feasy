@@ -27,6 +27,9 @@ const paymentSchema = new mongoose.Schema(
     paidAt: { type: Date, default: () => new Date(), index: true },
     // True when this payment also renewed/extended the subscription.
     renewed: { type: Boolean, default: false },
+    discountCode: { type: String, trim: true, uppercase: true, default: '' },
+    discountAmount: { type: Number, default: 0 },
+    originalAmount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

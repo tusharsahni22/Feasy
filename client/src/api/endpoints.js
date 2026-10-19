@@ -67,3 +67,24 @@ export const UsersAPI = {
 export const AuditLogsAPI = {
   list: (params) => api.get('/audit-logs', { params }).then((r) => r.data),
 };
+
+export const AttendanceAPI = {
+  scan: (body) => api.post('/attendance/scan', body).then((r) => r.data),
+  list: (params) => api.get('/attendance', { params }).then((r) => r.data),
+  manual: (body) => api.post('/attendance/manual', body).then((r) => r.data),
+};
+
+export const DiscountsAPI = {
+  list: () => api.get('/discounts').then((r) => r.data),
+  create: (body) => api.post('/discounts', body).then((r) => r.data),
+  validate: (body) => api.post('/discounts/validate', body).then((r) => r.data),
+  toggle: (id) => api.patch(`/discounts/${id}/toggle`).then((r) => r.data),
+};
+
+export const DietAPI = {
+  updateStudent: (studentId, body) => api.put(`/diet/student/${studentId}`, body).then((r) => r.data),
+  bulkUpload: (body) => api.post('/diet/bulk-upload', body).then((r) => r.data),
+  send: (studentId, body) => api.post(`/diet/send/${studentId}`, body).then((r) => r.data),
+  bulkSend: (body) => api.post('/diet/bulk-send', body).then((r) => r.data),
+};
+
