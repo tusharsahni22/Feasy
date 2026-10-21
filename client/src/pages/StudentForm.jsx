@@ -120,10 +120,10 @@ export default function StudentForm() {
 
   function validate() {
     const e = {};
-    if (!form.name.trim()) e.name = 'Student name is required';
-    if (!form.parentName.trim()) e.parentName = 'Parent name is required';
+    if (!form.name.trim()) e.name = `${labels.memberSingular} name is required`;
+    if (!form.parentName.trim()) e.parentName = `${labels.contactPersonLabel || 'Contact person'} name is required`;
     if (!form.parentPhone.trim()) e.parentPhone = 'A contact number is required';
-    if (!form.classPlan) e.classPlan = 'Select a class';
+    if (!form.classPlan) e.classPlan = `Select a ${labels.categorySingular.toLowerCase()}`;
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -155,10 +155,10 @@ export default function StudentForm() {
       const saved = isEdit
         ? await StudentsAPI.update(id, body)
         : await StudentsAPI.create(body);
-      toast.success(isEdit ? 'Student updated' : `${saved.name} enrolled`);
+      toast.success(isEdit ? `${labels.memberSingular} updated` : `${saved.name} enrolled`);
       navigate(`/students/${saved._id}`);
     } catch (err) {
-      toast.error(err.message || 'Could not save student');
+      toast.error(err.message || `Could not save ${labels.memberSingular.toLowerCase()}`);
     } finally {
       setSaving(false);
     }
@@ -320,7 +320,7 @@ export default function StudentForm() {
                   {/* Class filter — defaults to the student's class; switch it to
                       add subjects from any other class too. */}
                   <div className="subject-filter">
-                    <span>Showing subjects for</span>
+                    <span>Showing ${labels.itemPlural.toLowerCase()} for</span>
                     <select
                       className="select"
                       value={subjectClassFilter}

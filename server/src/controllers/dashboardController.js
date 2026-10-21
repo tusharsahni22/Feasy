@@ -94,12 +94,16 @@ export const getSummary = asyncHandler(async (req, res) => {
   // Start of this month string
   const monthStartStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-  const [dailyAtt, weeklyAtt, monthlyAtt, insideNow] = await Promise.all([
+  const [dailyAtt, weeklyAtt, monthlyAtt, insideNow, uniqueTodayStudents] = await Promise.all([
     Attendance.countDocuments({ tenantId, date: todayStr }),
     Attendance.countDocuments({ tenantId, date: { $gte: sevenDaysAgoStr, $lte: todayStr } }),
     Attendance.countDocuments({ tenantId, date: { $gte: monthStartStr, $lte: todayStr } }),
     Attendance.countDocuments({ tenantId, date: todayStr, checkOut: { $exists: false } }),
+    Attendance.distinct('studentId', { tenantId, date: todayStr }),
   ]);
+
+  const uniqueTodayCount = uniqueTodayStudents ? uniqueTodayStudents.length : 0;
+  const attendanceRate = active.length > 0 ? Math.min(100, Math.round((uniqueTodayCount / active.length) * 100)) : 0;
 
   res.json({
     institute: settings.instituteName,
@@ -131,6 +135,8 @@ export const getSummary = asyncHandler(async (req, res) => {
     },
     attendance: {
       daily: dailyAtt,
+      uniqueToday: uniqueTodayCount,
+      rate: attendanceRate,
       weekly: weeklyAtt,
       monthly: monthlyAtt,
       insideNow,
@@ -208,8 +214,9 @@ export const getCharts = asyncHandler(async (req, res) => {
 export const getExpiring = asyncHandler(async (req, res) => {
   const tenantId = req.tenantId;
   const settings = await getSettings(tenantId);
-  const leadDays = settings.reminderLeadDays;
-  const within = req.query.within !== undefined ? Number(req.query.within) : null;
+  const leadDays = settings.reminderLeadDays || 7;
+  // If 'within' query param is not explicitly given, default to reminderLeadDays
+  const within = req.query.within !== undefined ? Number(req.query.within) : leadDays;
   const limit = Number(req.query.limit) || 100;
 
   const students = await Student.find({ tenantId, status: 'active' })
@@ -219,12 +226,8 @@ export const getExpiring = asyncHandler(async (req, res) => {
 
   let decorated = students
     .map((s) => decorateStudent(s, leadDays))
-    .filter((s) => s.remainingDays !== null)
+    .filter((s) => s.remainingDays !== null && s.remainingDays >= 0 && s.remainingDays <= within)
     .sort((a, b) => a.remainingDays - b.remainingDays);
-
-  if (within !== null) {
-    decorated = decorated.filter((s) => s.remainingDays <= within);
-  }
 
   res.json(decorated.slice(0, limit));
 });

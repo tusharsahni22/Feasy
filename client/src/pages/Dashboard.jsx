@@ -167,8 +167,10 @@ export default function Dashboard() {
           <StatCard
             label="Attendance Rate"
             value={
-              summary.students.active > 0
-                ? `${Math.round(((summary.attendance?.daily || 0) / summary.students.active) * 100)}%`
+              summary.attendance?.rate !== undefined
+                ? `${summary.attendance.rate}%`
+                : summary.students.active > 0
+                ? `${Math.min(100, Math.round(((summary.attendance?.uniqueToday || summary.attendance?.daily || 0) / summary.students.active) * 100))}%`
                 : '0%'
             }
             foot={

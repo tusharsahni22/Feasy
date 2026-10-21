@@ -11,6 +11,27 @@ import { decorateStudent } from '../utils/decorate.js';
 import { getSettings } from '../services/settingsService.js';
 import { logAudit } from '../services/auditService.js';
 
+/**
+ * Validate and clean a 10-digit Indian mobile number.
+ * Strips leading 0 or +91/91. Must be exactly 10 digits starting with 6-9.
+ */
+function cleanAndValidatePhone(rawPhone, fieldLabel = 'Contact number') {
+  if (!rawPhone || typeof rawPhone !== 'string') {
+    throw new ApiError(400, `${fieldLabel} is required`);
+  }
+  let digits = rawPhone.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    digits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+
+  if (!/^[6-9]\d{9}$/.test(digits)) {
+    throw new ApiError(400, `${fieldLabel} must be a valid 10-digit mobile number`);
+  }
+  return digits;
+}
+
 /** Resolve class + subjects, then compute the fee snapshot and subscription window. */
 async function buildFeeAndSubscription(body, existing = null) {
   const classId = body.classPlan ?? existing?.classPlan;
@@ -88,6 +109,13 @@ export const createStudent = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Name, parent/contact name and phone are required');
   }
 
+  const validPhone = cleanAndValidatePhone(parentPhone, 'Contact number');
+
+  // Prevent member's contact name/number circularity
+  if (parentName.trim() === validPhone || parentName.trim().replace(/\D/g, '') === validPhone) {
+    throw new ApiError(400, 'Emergency/Contact person name cannot be the member\'s own phone number');
+  }
+
   const { fees, plan, start, end, subjectIds } = await buildFeeAndSubscription(req.body);
 
   // Auto-generate unique barcode if not supplied
@@ -95,9 +123,9 @@ export const createStudent = asyncHandler(async (req, res) => {
 
   const created = await Student.create({
     tenantId: req.tenantId,
-    name,
-    parentName,
-    parentPhone,
+    name: name.trim(),
+    parentName: parentName.trim(),
+    parentPhone: validPhone,
     gender: req.body.gender,
     classPlan: req.body.classPlan,
     subjects: subjectIds,
@@ -118,7 +146,7 @@ export const createStudent = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
     user: req.user,
     action: 'member.create',
-    entityType: 'Student',
+    entityType: 'Member',
     entityId: created._id,
     description: `Created member ${created.name} (${plan} plan, monthly fee: ${fees.monthlyFee})`,
     changes: { name: created.name, monthlyFee: fees.monthlyFee, plan, barcode },
@@ -137,15 +165,25 @@ export const updateStudent = asyncHandler(async (req, res) => {
   const existing = await Student.findOne({ _id: req.params.id, tenantId: req.tenantId });
   if (!existing) throw new ApiError(404, 'Member not found in your workspace');
 
+  let validPhone = existing.parentPhone;
+  if (req.body.parentPhone !== undefined) {
+    validPhone = cleanAndValidatePhone(req.body.parentPhone, 'Contact number');
+  }
+
+  const pName = req.body.parentName !== undefined ? req.body.parentName.trim() : existing.parentName;
+  if (pName === validPhone || pName.replace(/\D/g, '') === validPhone) {
+    throw new ApiError(400, 'Emergency/Contact person name cannot be the member\'s own phone number');
+  }
+
   const { fees, plan, start, end, subjectIds } = await buildFeeAndSubscription(
     req.body,
     existing
   );
 
   const fields = {
-    ...(req.body.name !== undefined && { name: req.body.name }),
-    ...(req.body.parentName !== undefined && { parentName: req.body.parentName }),
-    ...(req.body.parentPhone !== undefined && { parentPhone: req.body.parentPhone }),
+    ...(req.body.name !== undefined && { name: req.body.name.trim() }),
+    ...(req.body.parentName !== undefined && { parentName: pName }),
+    parentPhone: validPhone,
     ...(req.body.gender !== undefined && { gender: req.body.gender }),
     ...(req.body.classPlan !== undefined && { classPlan: req.body.classPlan }),
     ...(req.body.notes !== undefined && { notes: req.body.notes }),
@@ -175,7 +213,7 @@ export const updateStudent = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
     user: req.user,
     action: 'member.update',
-    entityType: 'Student',
+    entityType: 'Member',
     entityId: existing._id,
     description: `Updated member ${updated.name}`,
     changes: {
@@ -203,7 +241,7 @@ export const deleteStudent = asyncHandler(async (req, res) => {
     tenantId: req.tenantId,
     user: req.user,
     action: 'member.delete',
-    entityType: 'Student',
+    entityType: 'Member',
     entityId: student._id,
     description: `Deleted member ${student.name} and related history`,
   });

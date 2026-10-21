@@ -220,7 +220,7 @@ export default function PaymentModal({ student, onClose, onSaved }) {
             className="input"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. Paid via father"
+            placeholder="e.g. Paid via UPI / Guardian / Cash counter"
           />
         </Field>
       </div>

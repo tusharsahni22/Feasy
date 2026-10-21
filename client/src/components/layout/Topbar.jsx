@@ -4,7 +4,7 @@ import { useSettings } from '../../context/SettingsContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import Button from '../ui/Button.jsx';
 
-function titleFor(path, labels) {
+function titleFor(path, labels, orgName) {
   const mSingular = labels.memberSingular || 'Member';
   const mPlural = labels.memberPlural || 'Members';
   const subLabel = labels.subscriptionLabel || 'Subscription';
@@ -15,18 +15,25 @@ function titleFor(path, labels) {
     return [`Edit ${mSingular.toLowerCase()}`, 'Update profile and plan details'];
   if (path.startsWith('/students/')) return [`${mSingular} profile`, `${subLabel}, fee schedule & payment history`];
   if (path === '/students') return [mPlural, `Manage all active and registered ${mPlural.toLowerCase()}`];
+  if (path === '/attendance') return ['Attendance & Access', 'Daily footfall, QR / barcode check-ins & logs'];
+  if (path === '/diet-plans') return ['Diet & Workout Plans', 'Custom nutrition plans, macros and meal builders'];
+  if (path === '/discounts') return ['Discount Coupons', 'Create and manage promotional discount vouchers'];
   if (path === '/fees') return [labels.plansPageTitle || 'Plans & Add-ons', labels.plansPageSubtitle || 'Base fees and add-ons'];
   if (path === '/payments') return ['Payments', 'Collection records & transaction ledger'];
   if (path === '/reminders') return ['Reminders', `Send upcoming ${subLabel.toLowerCase()} renewal notifications`];
+  if (path === '/team') return ['Team Management', 'Manage staff accounts and workspace roles'];
+  if (path === '/audit-logs') return ['Activity & Audit Logs', 'Chronological security log of actions'];
+  if (path === '/workspaces') return ['Workspaces & Tenants', 'Platform administration and isolated instances'];
   if (path === '/settings') return ['Settings', 'Business mode, branding, currency & notifications'];
-  return ['Feasy', ''];
+  return [orgName || 'Workspace', ''];
 }
 
 export default function Topbar({ onMenu }) {
   const { pathname } = useLocation();
   const { settings, labels } = useSettings();
   const { user, tenant, logout } = useAuth();
-  const [title, sub] = titleFor(pathname, labels);
+  const displayName = tenant?.name || settings.instituteName || 'Feasy Workspace';
+  const [title, sub] = titleFor(pathname, labels, displayName);
 
   return (
     <header className="topbar">
@@ -39,7 +46,7 @@ export default function Topbar({ onMenu }) {
       </div>
       <div className="topbar-spacer" />
       <div className="hstack wrap" style={{ gap: 10, alignItems: 'center' }}>
-        <span className="chip">{tenant?.name || settings.instituteName || 'Feasy Workspace'}</span>
+        <span className="chip">{displayName}</span>
         {user && (
           <div
             className="hstack"

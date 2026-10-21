@@ -72,7 +72,7 @@ export default function AuditLogs() {
             onChange={(e) => setFilterType(e.target.value)}
           >
             <option value="">All Entities</option>
-            <option value="Student">Members / Students</option>
+            <option value="Member">Members</option><option value="Student">Students (Legacy)</option>
             <option value="Payment">Payments &amp; Fees</option>
             <option value="User">Team Members</option>
           </select>

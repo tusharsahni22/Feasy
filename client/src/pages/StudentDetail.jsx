@@ -117,7 +117,7 @@ export default function StudentDetail() {
         <div>
           <Link to="/students" className="link" style={{ fontSize: 13 }}>
             <span className="hstack" style={{ gap: 5 }}>
-              <ArrowLeft size={14} /> All students
+              <ArrowLeft size={14} /> All ${labels.memberPlural.toLowerCase()}
             </span>
           </Link>
           <div className="hstack" style={{ gap: 14, marginTop: 8 }}>

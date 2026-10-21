@@ -31,7 +31,7 @@ export const updateStudentDiet = asyncHandler(async (req, res) => {
 
   await recordAudit({
     tenantId,
-    userId: req.user?._id,
+    user: req.user, userId: req.user?._id,
     action: 'diet_plan_updated',
     entity: 'Student',
     entityId: student._id,
@@ -107,7 +107,7 @@ export const bulkUploadDiet = asyncHandler(async (req, res) => {
 
   await recordAudit({
     tenantId,
-    userId: req.user?._id,
+    user: req.user, userId: req.user?._id,
     action: 'diet_plan_bulk_upload',
     entity: 'Student',
     details: { updated: results.updated, failed: results.failed },
@@ -163,7 +163,7 @@ export const sendDietPlan = asyncHandler(async (req, res) => {
 
     await recordAudit({
       tenantId,
-      userId: req.user?._id,
+      user: req.user, userId: req.user?._id,
       action: 'diet_plan_dispatched',
       entity: 'Student',
       entityId: student._id,

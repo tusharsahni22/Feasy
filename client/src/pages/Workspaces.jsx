@@ -190,6 +190,7 @@ export default function Workspaces() {
             Create isolated workspaces for other business owners. Self-registration is restricted.
           </p>
         </div>
+        {user?.isSuperAdmin && (
         <Button
           variant="primary"
           icon={Plus}
@@ -197,6 +198,7 @@ export default function Workspaces() {
         >
           Create New Workspace
         </Button>
+      )}
       </div>
 
       <Card

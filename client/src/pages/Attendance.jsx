@@ -260,7 +260,7 @@ export default function Attendance() {
           className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-subtle'}`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          <Users size={16} /> Full Class Roster ({students.length})
+          <Users size={16} /> Full ${labels.memberPlural} Roster ({students.length})
         </button>
       </div>
 
@@ -524,7 +524,7 @@ export default function Attendance() {
       {/* Roster View: All Students with Time & Status */}
       {activeTab === 'roster' && (
         <Card
-          title={`All Students Daily Roster (${selectedDate})`}
+          title={`All ${labels.memberPlural} Daily Roster (${selectedDate})`}
           subtitle="Check in any student directly, review in/out time stamps and total time spent"
           actions={
             <Button variant="ghost" size="sm" icon={CheckSquare} onClick={markAllPresent}>

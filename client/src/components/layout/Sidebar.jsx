@@ -22,6 +22,7 @@ export default function Sidebar({ open }) {
   const { user } = useAuth();
 
   const isOwnerOrAdmin = user?.isSuperAdmin || user?.role === 'owner' || user?.role === 'admin';
+  const isSuper = Boolean(user?.isSuperAdmin);
 
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -36,7 +37,7 @@ export default function Sidebar({ open }) {
       ? [
           { to: '/team', label: 'Team', icon: UserCheck },
           { to: '/audit-logs', label: 'Activity Log', icon: History },
-          { to: '/workspaces', label: 'Workspaces', icon: Building2 },
+          ...(isSuper ? [{ to: '/workspaces', label: 'Workspaces', icon: Building2 }] : []),
         ]
       : []),
     { to: '/settings', label: 'Settings', icon: SettingsIcon },
@@ -49,7 +50,7 @@ export default function Sidebar({ open }) {
           <CreditCard size={22} />
         </div>
         <div>
-          <div className="brand-name">Feasy</div>
+          <div className="brand-name">{settings.instituteName || 'Feasy'}</div>
           <div className="brand-sub">Subscriptions &amp; Fees</div>
         </div>
       </div>
