@@ -217,9 +217,17 @@ button {
   backdrop-filter: blur(10px);
   z-index: 30;
 }
+.topbar-title-box {
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .topbar h1 {
   font-size: 18px;
   font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .topbar-sub {
   font-size: 12.5px;
@@ -881,9 +889,34 @@ table.tbl {
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .stat-value { font-size: 22px; }
   .content { padding: 16px; }
-  .topbar h1 { font-size: 16px; }
+  .topbar {
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .topbar-title-box {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .topbar h1 {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .topbar-sub { display: none; }
-  .topbar .chip { display: none; }
+  .topbar .chip, .topbar-chip { display: none; }
+  .topbar-user-badge {
+    padding: 3px 6px;
+    gap: 4px;
+  }
+  .topbar-user-name {
+    max-width: 75px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+  }
+  .topbar-user-role { display: none; }
   .page-head { margin-bottom: 18px; }
   .card-head { padding: 15px 16px; }
   .card-body { padding: 16px; }

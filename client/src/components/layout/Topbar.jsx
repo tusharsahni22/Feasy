@@ -40,16 +40,16 @@ export default function Topbar({ onMenu }) {
       <button className="hamburger" onClick={onMenu} aria-label="Toggle menu">
         <Menu size={20} />
       </button>
-      <div>
+      <div className="topbar-title-box">
         <h1>{title}</h1>
         <div className="topbar-sub">{sub}</div>
       </div>
       <div className="topbar-spacer" />
-      <div className="hstack wrap" style={{ gap: 10, alignItems: 'center' }}>
-        <span className="chip">{displayName}</span>
+      <div className="topbar-actions hstack wrap" style={{ gap: 10, alignItems: 'center' }}>
+        <span className="chip topbar-chip">{displayName}</span>
         {user && (
           <div
-            className="hstack"
+            className="hstack topbar-user-badge"
             style={{
               gap: 8,
               background: 'var(--surface-2)',
@@ -59,8 +59,9 @@ export default function Topbar({ onMenu }) {
             }}
           >
             <UserIcon size={14} style={{ color: 'var(--saffron)' }} />
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{user.name}</span>
+            <span className="topbar-user-name" style={{ fontSize: 13, fontWeight: 600 }}>{user.name}</span>
             <span
+              className="topbar-user-role"
               style={{
                 fontSize: 11,
                 textTransform: 'uppercase',

@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
-  History,
-  User,
   Clock,
-  Filter,
-  FileText,
-  CreditCard,
-  UserCheck,
-  ShieldAlert,
+  History,
 } from 'lucide-react';
 import { AuditLogsAPI } from '../api/endpoints.js';
 import Card from '../components/ui/Card.jsx';
@@ -72,7 +66,8 @@ export default function AuditLogs() {
             onChange={(e) => setFilterType(e.target.value)}
           >
             <option value="">All Entities</option>
-            <option value="Member">Members</option><option value="Student">Students (Legacy)</option>
+            <option value="Member">Members</option>
+            <option value="Student">Students (Legacy)</option>
             <option value="Payment">Payments &amp; Fees</option>
             <option value="User">Team Members</option>
           </select>
@@ -95,40 +90,42 @@ export default function AuditLogs() {
             <table className="tbl" style={{ '--tbl-min': '700px' }}>
               <thead>
                 <tr>
-                  <th>Timestamp</th>
                   <th>User / Actor</th>
                   <th>Action</th>
                   <th>Entity</th>
                   <th>Details</th>
+                  <th>Timestamp</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
                   <tr key={log._id}>
-                    <td style={{ fontSize: 12.5, whiteSpace: 'nowrap', color: 'var(--text-dim)' }}>
-                      <div className="hstack" style={{ gap: 6 }}>
-                        <Clock size={13} style={{ color: 'var(--text-faint)' }} />
-                        {formatTimestamp(log.createdAt)}
-                      </div>
-                    </td>
                     <td className="cell-main">
-                      <div style={{ fontWeight: 600 }}>{log.userName}</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--text-faint)' }}>
-                        {log.userEmail || log.userRole || 'System'}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, width: '100%', flexWrap: 'wrap' }}>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{log.userName}</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--text-faint)' }}>
+                            {log.userEmail || log.userRole || 'System'}
+                          </div>
+                        </div>
+                        <div className="hstack" style={{ gap: 5, fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+                          <Clock size={12} style={{ color: 'var(--text-faint)' }} />
+                          {formatTimestamp(log.createdAt)}
+                        </div>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Action">
                       <Badge tone={actionTone(log.action)}>
                         {log.action}
                       </Badge>
                     </td>
-                    <td>
+                    <td data-label="Entity">
                       <span className="tag-pill">
                         {log.entityType}
                       </span>
                     </td>
-                    <td style={{ fontSize: 13 }}>
-                      <div>{log.description}</div>
+                    <td data-label="Details" style={{ fontSize: 13, minWidth: 0, overflowWrap: 'anywhere' }}>
+                      <div style={{ wordBreak: 'break-word' }}>{log.description}</div>
                       {log.changes && (
                         <div
                           style={{
@@ -139,7 +136,7 @@ export default function AuditLogs() {
                             background: 'var(--surface-2)',
                             padding: '4px 8px',
                             borderRadius: 6,
-                            maxWidth: 360,
+                            maxWidth: '100%',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -148,6 +145,12 @@ export default function AuditLogs() {
                           {JSON.stringify(log.changes)}
                         </div>
                       )}
+                    </td>
+                    <td data-label="Time" style={{ fontSize: 12.5, whiteSpace: 'nowrap', color: 'var(--text-dim)' }}>
+                      <div className="hstack" style={{ gap: 6 }}>
+                        <Clock size={13} style={{ color: 'var(--text-faint)' }} />
+                        {formatTimestamp(log.createdAt)}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -159,4 +162,3 @@ export default function AuditLogs() {
     </>
   );
 }
-
