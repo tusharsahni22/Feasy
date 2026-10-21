@@ -212,8 +212,8 @@ export default function Attendance() {
             Track in/out times, calculate duration, scan barcodes, or manage complete daily attendance rosters.
           </p>
         </div>
-        <div className="hstack" style={{ gap: 10 }}>
-          <div className="hstack" style={{ gap: 6, background: 'var(--bg-elevated)', padding: '4px 8px', borderRadius: 8 }}>
+        <div className="hstack wrap" style={{ gap: 10 }}>
+          <div className="hstack" style={{ gap: 6, background: 'var(--bg-elevated)', padding: '6px 10px', borderRadius: 8 }}>
             <Calendar size={16} color="var(--text-dim)" />
             <input
               type="date"
@@ -247,7 +247,7 @@ export default function Attendance() {
       </div>
 
       {/* Tabs */}
-      <div className="hstack" style={{ gap: 8, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 10 }}>
+      <div className="hstack wrap" style={{ gap: 8, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 10 }}>
         <button
           onClick={() => setActiveTab('scanner')}
           className={`btn ${activeTab === 'scanner' ? 'btn-primary' : 'btn-subtle'}`}
@@ -282,7 +282,7 @@ export default function Attendance() {
             }
           >
             <form onSubmit={handleScan} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div className="scan-form-row" style={{ display: 'flex', gap: 10 }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                   <input
                     ref={inputRef}
@@ -311,6 +311,7 @@ export default function Attendance() {
 
             {/* Zero Hardware Banner Callout */}
             <div
+              className="banner-responsive"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -569,9 +570,9 @@ export default function Attendance() {
                           {student.barcode || student._id.slice(-6)}
                         </div>
                       </td>
-                      <td>{student.parentPhone}</td>
-                      <td>{student.shiftTiming || 'General'}</td>
-                      <td>
+                      <td data-label="Contact">{student.parentPhone}</td>
+                      <td data-label="Shift">{student.shiftTiming || 'General'}</td>
+                      <td data-label="Days Left">
                         {isExpired ? (
                           <Badge tone="danger">Expired</Badge>
                         ) : daysLeft <= 7 ? (
@@ -580,7 +581,7 @@ export default function Attendance() {
                           <span style={{ fontWeight: 600, color: 'var(--emerald)' }}>{daysLeft}d</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Check-In">
                         {log?.checkIn ? (
                           <span style={{ color: 'var(--emerald)', fontWeight: 600 }}>
                             {new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -589,7 +590,7 @@ export default function Attendance() {
                           <span style={{ color: 'var(--text-faint)' }}>—</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Check-Out">
                         {log?.checkOut ? (
                           <span style={{ color: 'var(--sky)', fontWeight: 600 }}>
                             {new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -600,7 +601,7 @@ export default function Attendance() {
                           <span style={{ color: 'var(--text-faint)' }}>—</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Duration">
                         {log?.durationMinutes ? (
                           <span>{Math.floor(log.durationMinutes / 60)}h {log.durationMinutes % 60}m</span>
                         ) : isInside ? (
@@ -609,12 +610,12 @@ export default function Attendance() {
                           '—'
                         )}
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <Badge tone={isPresent ? (isInside ? 'sky' : 'emerald') : 'neutral'}>
                           {isPresent ? (isInside ? 'In Facility' : 'Present') : 'Not Checked In'}
                         </Badge>
                       </td>
-                      <td className="right">
+                      <td data-label="Action" className="right cell-actions">
                         {!log ? (
                           <Button
                             variant="primary"
@@ -684,10 +685,10 @@ export default function Attendance() {
                       </td>
                       <td>{log.studentId?.parentPhone || '—'}</td>
                       <td>{log.studentId?.shiftTiming || 'General'}</td>
-                      <td style={{ color: 'var(--emerald)', fontWeight: 600 }}>
+                      <td data-label="Check-In" style={{ color: 'var(--emerald)', fontWeight: 600 }}>
                         {new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td>
+                      <td data-label="Check-Out">
                         {log.checkOut ? (
                           <span style={{ color: 'var(--sky)', fontWeight: 600 }}>
                             {new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -820,9 +821,11 @@ export default function Attendance() {
                   textAlign: 'center',
                   background: '#ffffff',
                   color: '#111827',
-                  padding: 32,
+                  padding: '24px 16px',
                   borderRadius: 16,
                   border: '2px solid #e5e7eb',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
                 }}
               >
                 <div style={{ textTransform: 'uppercase', letterSpacing: 2, fontSize: 13, fontWeight: 700, color: '#f59e0b', marginBottom: 6 }}>
@@ -848,7 +851,7 @@ export default function Attendance() {
                   <img
                     src={qrImageUrl}
                     alt="Desk Check-In QR Code"
-                    style={{ width: 220, height: 220, display: 'block', borderRadius: 8 }}
+                    style={{ maxWidth: '100%', width: 220, height: 'auto', aspectRatio: '1/1', display: 'block', borderRadius: 8 }}
                   />
                 </div>
 

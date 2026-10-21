@@ -80,17 +80,21 @@ export default function StudentSelfCheckIn() {
     <div
       style={{
         minHeight: '100vh',
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
         background: 'linear-gradient(180deg, #0d111a 0%, #06090e 100%)',
         color: '#f3f4f6',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '24px 16px',
+        padding: '16px 12px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
       {/* Brand Header */}
-      <div style={{ textAlign: 'center', maxWidth: 420, width: '100%', marginBottom: 24, marginTop: 12 }}>
+      <div style={{ textAlign: 'center', maxWidth: 440, width: '100%', marginBottom: 18, marginTop: 6, boxSizing: 'border-box' }}>
         <div
           style={{
             display: 'inline-flex',
@@ -118,12 +122,13 @@ export default function StudentSelfCheckIn() {
       {/* Main Action Box */}
       <div
         style={{
-          maxWidth: 420,
+          maxWidth: 440,
           width: '100%',
+          boxSizing: 'border-box',
           background: 'rgba(255, 255, 255, 0.04)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: 20,
-          padding: 24,
+          padding: '20px 16px',
           backdropFilter: 'blur(16px)',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
         }}
@@ -269,12 +274,14 @@ export default function StudentSelfCheckIn() {
                 padding: '14px 16px',
                 textAlign: 'left',
                 display: 'flex',
+                flexWrap: 'wrap',
+                gap: 12,
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: 16,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
                 <div
                   style={{
                     width: 38,
@@ -348,13 +355,14 @@ export default function StudentSelfCheckIn() {
               style={{
                 background: '#161b26',
                 borderRadius: 14,
-                padding: 16,
+                padding: '14px 16px',
                 textAlign: 'left',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 12,
                 fontSize: 13,
                 marginBottom: 20,
+                wordBreak: 'break-word',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

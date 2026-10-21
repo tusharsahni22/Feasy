@@ -28,18 +28,31 @@ export const scanAttendance = asyncHandler(async (req, res) => {
   const queryCode = code.trim();
   const tenantId = req.tenantId;
 
-  // Search by barcode or mongo ID
-  let student = await Student.findOne({
-    tenantId,
-    barcode: queryCode,
-  }).populate('classPlan', 'name');
+  // Search by barcode, parentPhone (exact or stripped), or Mongo ID
+  const cleanDigits = queryCode.replace(/\D/g, "");
+  const phoneVariants = [
+    queryCode,
+    cleanDigits,
+    queryCode.startsWith("+91") ? queryCode.slice(3) : null,
+    cleanDigits.length === 10 ? "+91" + cleanDigits : null,
+  ].filter(Boolean);
 
-  if (!student && queryCode.match(/^[0-9a-fA-F]{24}$/)) {
-    student = await Student.findOne({ _id: queryCode, tenantId }).populate('classPlan', 'name');
+  const filter = {
+    tenantId,
+    $or: [
+      { barcode: queryCode },
+      { parentPhone: { $in: phoneVariants } },
+    ],
+  };
+
+  if (queryCode.match(/^[0-9a-fA-F]{24}$/)) {
+    filter.$or.push({ _id: queryCode });
   }
 
+  let student = await Student.findOne(filter).populate("classPlan", "name");
+
   if (!student) {
-    throw new ApiError(404, `No member found with code: ${queryCode}`);
+    throw new ApiError(404, `No member found with phone / barcode: "${queryCode}"`);
   }
 
   const today = getTodayDateString();
@@ -294,12 +307,19 @@ export const selfCheckIn = asyncHandler(async (req, res) => {
   }
 
   const cleanId = identifier.trim();
+  const cleanDigits = cleanId.replace(/\D/g, "");
+  const phoneVariants = [
+    cleanId,
+    cleanDigits,
+    cleanId.startsWith("+91") ? cleanId.slice(3) : null,
+    cleanDigits.length === 10 ? "+91" + cleanDigits : null,
+  ].filter(Boolean);
 
-  // Search by parentPhone or barcode or ID
+  // Search by parentPhone, barcode, or ID
   const filter = {
     tenantId: tenant._id,
     $or: [
-      { parentPhone: cleanId },
+      { parentPhone: { $in: phoneVariants } },
       { barcode: cleanId },
     ],
   };

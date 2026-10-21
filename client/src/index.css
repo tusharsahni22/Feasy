@@ -309,6 +309,7 @@ button {
 .grid-kpi { grid-template-columns: repeat(4, 1fr); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
 .dash-cols { grid-template-columns: 1.5fr 1fr; align-items: start; }
 
 /* ── Overflow discipline ─────────────────────────────────────────────────────
@@ -752,6 +753,7 @@ table.tbl {
   .grid-2,
   .dash-cols { grid-template-columns: minmax(0, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .tbl th { padding: 11px 12px; }
   .tbl td { padding: 11px 12px; }
   /* When the card is only a hair narrower than the table's comfortable floor,
@@ -875,7 +877,7 @@ table.tbl {
 
 @media (max-width: 620px) {
   .grid { gap: 14px; }
-  .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .stat-value { font-size: 22px; }
   .content { padding: 16px; }
@@ -909,5 +911,37 @@ table.tbl {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+
+/* ?? Attendance & Scan Responsive Enhancements ???????????????????????????? */
+@media (max-width: 768px) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .page-head .hstack {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .page-head .hstack > * {
+    flex: 1 1 auto;
+    min-width: 140px;
+  }
+  .scan-form-row {
+    flex-direction: column !important;
+  }
+  .scan-form-row .btn {
+    width: 100%;
+  }
+  .banner-responsive {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  .banner-responsive .btn {
+    width: 100%;
   }
 }
