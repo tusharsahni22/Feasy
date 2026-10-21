@@ -69,9 +69,82 @@ export const bulkUploadDiet = asyncHandler(async (req, res) => {
       } else if (item.barcode) {
         query.barcode = String(item.barcode).trim();
       } else if (item.phone) {
-        query.parentPhone = String(item.phone).trim();
+        const rawPhone = String(item.phone).trim();
+        const cleanDigits = rawPhone.replace(/\D/g, '');
+        const phoneVariants = [
+          rawPhone,
+          cleanDigits,
+          rawPhone.startsWith('+91') ? rawPhone.slice(3) : null,
+          cleanDigits.length === 10 ? '+91' + cleanDigits : null,
+        ].filter(Boolean);
+        query.parentPhone = { $in: phoneVariants };
       } else if (item.name) {
-        query.name = new RegExp(`^${item.name.trim()}$`, 'i');
+        query.name = new RegExp(`^${item.name.trim()}import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import Student from '../models/Student.js';
+import { dispatchMessage } from '../services/messaging/index.js';
+import { getSettingsForTenant } from '../services/settingsService.js';
+import { recordAudit } from '../services/auditService.js';
+
+/**
+ * Update diet plan for an individual student.
+ * PUT /api/diet/student/:id
+ */
+export const updateStudentDiet = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, caloriesTarget, details, pdfUrl } = req.body;
+  const tenantId = req.tenantId;
+
+  const student = await Student.findOne({ _id: id, tenantId });
+  if (!student) {
+    throw new ApiError(404, 'Student/Member not found');
+  }
+
+  student.dietPlan = {
+    title: title || 'Personalized Diet & Nutrition Plan',
+    caloriesTarget: Number(caloriesTarget) || 0,
+    details: details || '',
+    pdfUrl: pdfUrl || '',
+    updatedAt: new Date(),
+  };
+
+  await student.save();
+
+  await recordAudit({
+    tenantId,
+    userId: req.user?._id,
+    action: 'diet_plan_updated',
+    entity: 'Student',
+    entityId: student._id,
+    details: { studentName: student.name, dietTitle: student.dietPlan.title },
+    ipAddress: req.ip,
+  });
+
+  res.json({ message: 'Diet plan updated successfully', student });
+});
+
+/**
+ * Bulk upload diet plans. Accepts an array of { studentId or phone or barcode, title, caloriesTarget, details, pdfUrl }
+ * POST /api/diet/bulk-upload
+ */
+export const bulkUploadDiet = asyncHandler(async (req, res) => {
+  const { plans } = req.body; // array of items
+  const tenantId = req.tenantId;
+
+  if (!Array.isArray(plans) || plans.length === 0) {
+    throw new ApiError(400, 'Expected non-empty "plans" array');
+  }
+
+  const results = {
+    total: plans.length,
+    updated: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (const item of plans) {
+    try {
+, 'i');
       } else {
         throw new Error('No identifier provided (need studentId, barcode, phone, or name)');
       }

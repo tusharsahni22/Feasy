@@ -9,7 +9,12 @@ import {
   AlertCircle,
   ExternalLink,
   Users,
+  Sparkles,
+  Search,
+  Filter,
+  Copy,
 } from 'lucide-react';
+import { DIET_TEMPLATES } from '../components/students/DietPlanModal.jsx';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
@@ -28,6 +33,12 @@ export default function DietPlans() {
   const [csvText, setCsvText] = useState('');
   const [uploading, setUploading] = useState(false);
   const [sendingBulk, setSendingBulk] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterShift, setFilterShift] = useState('all');
+  const [showBatchAssignModal, setShowBatchAssignModal] = useState(false);
+  const [batchTemplateId, setBatchTemplateId] = useState(DIET_TEMPLATES[0].id);
+  const [batchTargetGroup, setBatchTargetGroup] = useState('all_unassigned'); // 'all_unassigned' | 'all' | shift name
+  const [assigningBatch, setAssigningBatch] = useState(false);
 
   useEffect(() => {
     loadMembers();
@@ -92,6 +103,57 @@ export default function DietPlans() {
     }
   }
 
+  async function handleBatchAssignTemplate() {
+    const template = DIET_TEMPLATES.find((t) => t.id === batchTemplateId) || DIET_TEMPLATES[0];
+    let targets = [];
+
+    if (batchTargetGroup === 'all_unassigned') {
+      targets = students.filter((s) => !s.dietPlan || (!s.dietPlan.details && !s.dietPlan.pdfUrl));
+    } else if (batchTargetGroup === 'all') {
+      targets = students;
+    } else {
+      // Filter by shift
+      targets = students.filter((s) => (s.shiftTiming || 'General') === batchTargetGroup);
+    }
+
+    if (targets.length === 0) {
+      toast.error('No matching members found for this criteria');
+      return;
+    }
+
+    if (!window.confirm(`Assign "${template.name}" to ${targets.length} members online?`)) return;
+
+    setAssigningBatch(true);
+    try {
+      const parts = [];
+      if (template.meals.breakfast) parts.push(`?? Breakfast: ${template.meals.breakfast}`);
+      if (template.meals.midMorning) parts.push(`?? Mid-Morning Snack: ${template.meals.midMorning}`);
+      if (template.meals.lunch) parts.push(`?? Lunch: ${template.meals.lunch}`);
+      if (template.meals.evening) parts.push(`? Evening: ${template.meals.evening}`);
+      if (template.meals.dinner) parts.push(`?? Dinner: ${template.meals.dinner}`);
+      if (template.tips) parts.push(`
+?? Guidelines:
+${template.tips}`);
+      const details = parts.join('\n\n');
+
+      const plans = targets.map((s) => ({
+        studentId: s._id,
+        title: template.title,
+        caloriesTarget: template.calories,
+        details,
+      }));
+
+      const res = await DietAPI.bulkUpload({ plans });
+      toast.success(`Assigned "${template.name}" to ${res.updated} members!`);
+      setShowBatchAssignModal(false);
+      loadMembers();
+    } catch (err) {
+      toast.error(err.message || 'Batch assignment failed');
+    } finally {
+      setAssigningBatch(false);
+    }
+  }
+
   async function handleBulkSend() {
     if (!window.confirm('Dispatch assigned diet plans to all members via WhatsApp?')) return;
     setSendingBulk(true);
@@ -104,6 +166,17 @@ export default function DietPlans() {
       setSendingBulk(false);
     }
   }
+
+  const uniqueShifts = Array.from(new Set(students.map((s) => s.shiftTiming || 'General')));
+
+  const filteredStudents = students.filter((s) => {
+    const matchesSearch =
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.parentPhone.includes(searchTerm) ||
+      (s.dietPlan?.title || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesShift = filterShift === 'all' || (s.shiftTiming || 'General') === filterShift;
+    return matchesSearch && matchesShift;
+  });
 
   const membersWithDiet = students.filter(
     (s) => s.dietPlan && (s.dietPlan.details || s.dietPlan.pdfUrl)
@@ -159,7 +232,37 @@ export default function DietPlans() {
         </Card>
       </div>
 
-      <Card title="Member Diet Roster">
+      <Card
+        title="Member Diet Roster"
+        subtitle="Manage diet plans individually or batch-assign online"
+        actions={
+          <div className="hstack wrap" style={{ gap: 8 }}>
+            <div className="search" style={{ minWidth: 200 }}>
+              <Search size={14} />
+              <input
+                className="input"
+                placeholder="Search member, phone, or plan..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ fontSize: 13, padding: '7px 12px 7px 34px' }}
+              />
+            </div>
+            <select
+              className="select"
+              value={filterShift}
+              onChange={(e) => setFilterShift(e.target.value)}
+              style={{ fontSize: 13, padding: '7px 28px 7px 12px' }}
+            >
+              <option value="all">All Shifts</option>
+              {uniqueShifts.map((shift) => (
+                <option key={shift} value={shift}>
+                  {shift}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+      >
         {loading ? (
           <div style={{ padding: 24, textAlign: 'center' }}>
             <div className="spinner" />
@@ -178,7 +281,7 @@ export default function DietPlans() {
                 </tr>
               </thead>
               <tbody>
-                {students.map((s) => {
+                {filteredStudents.map((s) => {
                   const hasPlan = Boolean(s.dietPlan?.details || s.dietPlan?.pdfUrl);
                   return (
                     <tr key={s._id}>
@@ -217,14 +320,14 @@ export default function DietPlans() {
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Calories">
                         {s.dietPlan?.caloriesTarget ? (
                           <Badge tone="sky">{s.dietPlan.caloriesTarget} kcal</Badge>
                         ) : (
                           '—'
                         )}
                       </td>
-                      <td className="right">
+                      <td data-label="Actions" className="right cell-actions">
                         <Button
                           variant={hasPlan ? 'subtle' : 'primary'}
                           size="sm"
@@ -287,6 +390,87 @@ export default function DietPlans() {
                 onChange={(e) => setCsvText(e.target.value)}
               />
             </Field>
+          </div>
+        </Modal>
+      )}
+      {/* 1-Click Online Template Assign Modal (Zero CSV Needed!) */}
+      {showBatchAssignModal && (
+        <Modal
+          title="1-Click Online Diet Assignment"
+          onClose={() => setShowBatchAssignModal(false)}
+          footer={
+            <>
+              <Button variant="subtle" onClick={() => setShowBatchAssignModal(false)} disabled={assigningBatch}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                icon={Sparkles}
+                onClick={handleBatchAssignTemplate}
+                disabled={assigningBatch}
+                style={{ background: 'linear-gradient(135deg, var(--saffron) 0%, #d97706 100%)', color: '#111827', border: 'none' }}
+              >
+                {assigningBatch ? 'Assigning Online?' : 'Confirm & Assign Now'}
+              </Button>
+            </>
+          }
+        >
+          <div className="stack" style={{ gap: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: 0 }}>
+              Quickly assign a pre-made nutrition plan to multiple members online without needing any Excel or CSV file.
+            </p>
+
+            <Field label="1. Select Pre-built Diet Plan">
+              <div className="grid grid-2" style={{ gap: 10 }}>
+                {DIET_TEMPLATES.map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => setBatchTemplateId(t.id)}
+                    style={{
+                      background: batchTemplateId === t.id ? 'var(--saffron-soft)' : 'var(--bg-elevated)',
+                      border: `1px solid ${batchTemplateId === t.id ? 'var(--saffron)' : 'var(--border)'}`,
+                      borderRadius: 10,
+                      padding: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: 14, color: batchTemplateId === t.id ? 'var(--saffron-strong)' : 'var(--text-high)' }}>
+                      {t.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
+                      {t.calories} kcal ? {t.target}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="2. Apply to Which Members?">
+              <select
+                className="select"
+                value={batchTargetGroup}
+                onChange={(e) => setBatchTargetGroup(e.target.value)}
+              >
+                <option value="all_unassigned">
+                  Only Members with No Diet Plan Assigned ({students.filter((s) => !s.dietPlan?.details).length} members)
+                </option>
+                <option value="all">
+                  All Active Members ({students.length} members)
+                </option>
+                <optgroup label="Or Specific Shift / Batch">
+                  {uniqueShifts.map((shift) => (
+                    <option key={shift} value={shift}>
+                      {shift} Batch ({students.filter((s) => (s.shiftTiming || 'General') === shift).length} members)
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </Field>
+
+            <div style={{ background: 'rgba(59, 130, 246, 0.08)', padding: '10px 14px', borderRadius: 8, fontSize: 12, color: 'var(--text-dim)' }}>
+              ? Members can immediately see their plan in the <strong>Self Check-In Station</strong> and you can send it to their WhatsApp in 1 click!
+            </div>
           </div>
         </Modal>
       )}
